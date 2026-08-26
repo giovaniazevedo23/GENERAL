@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Manual do Sistema - GENERAL</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 40px 20px;
+            background-color: #f9f9f9;
+        }
+        .document-container {
+            background-color: #fff;
+            padding: 50px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            border-radius: 8px;
+        }
+        h1 {
+            color: #1e3a8a;
+            border-bottom: 2px solid #3b82f6;
+            padding-bottom: 10px;
+            margin-bottom: 30px;
+            text-align: center;
+        }
+        h2 {
+            color: #2563eb;
+            margin-top: 40px;
+            border-bottom: 1px solid #e5e7eb;
+            padding-bottom: 5px;
+        }
+        h3 {
+            color: #3b82f6;
+        }
+        p {
+            margin-bottom: 15px;
+        }
+        ul {
+            margin-bottom: 20px;
+        }
+        li {
+            margin-bottom: 8px;
+        }
+        .header-logo {
+            text-align: center;
+            font-size: 24px;
+            font-weight: bold;
+            color: #1e3a8a;
+            margin-bottom: 10px;
+        }
+        .header-subtitle {
+            text-align: center;
+            font-size: 14px;
+            color: #6b7280;
+            margin-bottom: 40px;
+        }
+        .print-button {
+            display: block;
+            width: 100%;
+            max-width: 200px;
+            margin: 0 auto 30px auto;
+            padding: 12px 20px;
+            background-color: #2563eb;
+            color: white;
+            text-align: center;
+            border: none;
+            border-radius: 6px;
+            font-size: 16px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: background-color 0.3s;
+        }
+        .print-button:hover {
+            background-color: #1d4ed8;
+        }
+        @media print {
+            body {
+                background-color: #fff;
+                padding: 0;
+            }
+            .document-container {
+                box-shadow: none;
+                padding: 0;
+            }
+            .print-button {
+                display: none;
+            }
+        }
+        .feature-box {
+            background-color: #eff6ff;
+            border-left: 4px solid #3b82f6;
+            padding: 15px;
+            margin: 20px 0;
+            border-radius: 0 8px 8px 0;
+        }
+    </style>
+</head>
+<body>
+
+    <button class="print-button" onclick="window.print()">Salvar como PDF</button>
+
+    <div class="document-container">
+        <div class="header-logo">🛡️ GENERAL</div>
+        <div class="header-subtitle">Gestão, Previsão e Auditoria de Planos Logísticos (PAAC 360°)</div>
+
+        <h1>Manual Completo do Sistema</h1>
+
+        <p>O <strong>GENERAL</strong> é uma plataforma de nível corporativo voltada para o gerenciamento estratégico de sinistros rodoviários, resposta imediata a emergências (Golden Hour) e inteligência na logística de produtos perigosos.</p>
+
+        <p>Este documento detalha o funcionamento de todos os módulos presentes no sistema.</p>
+
+        <h2>1. Visão Geral da Arquitetura</h2>
+        <p>O sistema foi construído para ser <strong>rápido, responsivo e resiliente</strong>. Ele funciona inteiramente no navegador (Frontend) e armazena os dados localmente utilizando a tecnologia <code>LocalStorage</code>, garantindo que o sistema possa ser utilizado mesmo em áreas sem conexão com a internet (Offline First). Além disso, possui suporte a PWA, permitindo ser instalado como um aplicativo nativo em computadores e celulares.</p>
+
+        <h2>2. Módulos Operacionais</h2>
+
+        <h3>2.1 Dashboard Operacional e Mapa Georreferenciado</h3>
+        <p>O coração do sistema é o seu painel de controle dinâmico. Ele exibe dados em tempo real sobre ocorrências ativas, incluindo:</p>
+        <ul>
+            <li><strong>Mapeamento Avançado (Leaflet):</strong> Integração com mapas interativos que desenham automaticamente polígonos e raios de isolamento com base no risco da carga.</li>
+            <li><strong>Motor de Risco:</strong> Um algoritmo que calcula um índice de 0 a 100 avaliando a gravidade do sinistro, sugerindo a próxima ação prioritária.</li>
+            <li><strong>Cronômetro SLA:</strong> Monitoramento estrito do tempo de resposta desde o aviso do acidente, garantindo conformidade com padrões de segurança internacionais.</li>
+        </ul>
+
+        <h3>2.2 Inteligência Artificial (AI Core 2.0)</h3>
+        <p>O sistema conta com inteligência preditiva para auxiliar os gestores logísticos nas tomadas de decisão. O módulo avalia rotas, histórico de incidentes e condições meteorológicas para sugerir planos de ação preventivos e medidas de mitigação em caso de sinistros.</p>
+
+        <h3>2.3 Wizard da Primeira Hora (Golden Hour)</h3>
+        <p>Os primeiros 60 minutos após um acidente são cruciais. Este módulo guia o operador através de um checklist rígido:</p>
+        <ul>
+            <li>Triagem imediata de vítimas e segurança humana.</li>
+            <li>Instruções precisas sobre isolamento da via e sinalização a 200m.</li>
+            <li>Botões de acionamento rápido para serviços de emergência (SAMU, PRF, Bombeiros).</li>
+        </ul>
+
+        <h3>2.4 Catálogo de Produtos Perigosos (HazMat)</h3>
+        <p>Um banco de dados integrado contendo as diretrizes da ANTT e ABIQUIM. Ao inserir o Número da ONU, o sistema automaticamente fornece:</p>
+        <div class="feature-box">
+            <strong>Exemplo de Dados Fornecidos:</strong>
+            Classe de risco, EPIs obrigatórios de aproximação, métodos seguros de contenção de vazamentos, distâncias seguras de evacuação e reatividade da substância.
+        </div>
+
+        <h3>2.5 Comunicação e Disparos Multicanal</h3>
+        <p>O sistema elimina a necessidade de digitação repetitiva de informações críticas. Com um clique, ele gera templates padronizados para:</p>
+        <ul>
+            <li>Envio rápido via WhatsApp para equipes de campo.</li>
+            <li>Disparo de e-mails formais para acionamento da Seguradora.</li>
+            <li>Comunicação oficial com órgãos ambientais (CETESB/IBAMA) para notificações de vazamento.</li>
+        </ul>
+
+        <h3>2.6 Módulo de Transbordo e Salvamento</h3>
+        <p>Calcula a logística necessária para recuperar a carga de forma segura, informando a quantidade de veículos de apoio necessários, bombas de sucção e materiais de absorção com base no volume derramado, além de emitir checklists ambientais para descontaminação.</p>
+
+        <h2>3. Auditoria e Relatórios</h2>
+
+        <h3>3.1 Investigação de Causa Raiz (RCA)</h3>
+        <p>Módulo para apuração pós-incidente. Utiliza diagramas interativos baseados na metodologia dos <strong>6M de Ishikawa</strong> (Método, Máquina, Mão de Obra, Material, Meio Ambiente e Medição) associado aos <strong>5 Porquês</strong>, permitindo encontrar a origem estrutural de uma falha logística.</p>
+
+        <h3>3.2 Dossiê Oficial em PDF</h3>
+        <p>A qualquer momento, o gestor pode gerar um relatório técnico consolidado com todas as ações tomadas, fotos (se houver), tempos de SLA, classificação de risco e dados da carga. Este PDF é o documento final aceito para processos de auditoria, seguradoras e prestação de contas.</p>
+
+        <h2>Conclusão</h2>
+        <p>O GENERAL é a solução definitiva para transportadoras e gerenciadoras de risco, centralizando inteligência preditiva, protocolos de segurança e automação documental num único ambiente seguro e rápido.</p>
+
+    </div>
+
+</body>
+</html>

@@ -1,0 +1,33 @@
+{
+  "name": "general-app",
+  "version": "2.5.0",
+  "description": "GENERAL - Aplicativo Nativo de Gestão Logística, IA Preditiva e Resposta a Sinistros",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron .",
+    "build:dir": "electron-builder --dir",
+    "build:win": "electron-builder --win",
+    "android:sync": "powershell -ExecutionPolicy Bypass -File sync_android.ps1",
+    "android:open": "npx cap open android"
+  },
+  "keywords": [
+    "logistica",
+    "gestao-de-risco",
+    "hazmat",
+    "sinistros",
+    "ia",
+    "electron"
+  ],
+  "author": "GENERAL IA Team",
+  "license": "MIT",
+  "devDependencies": {
+    "@capacitor/assets": "^3.0.5",
+    "electron": "^34.5.8"
+  },
+  "dependencies": {
+    "@capacitor/android": "^8.5.0",
+    "@capacitor/cli": "^6.0.0",
+    "@capacitor/core": "^8.5.0",
+    "@codetrix-studio/capacitor-google-auth": "^3.4.0-rc.4"
+  }
+}
