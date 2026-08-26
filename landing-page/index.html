@@ -1,0 +1,410 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GENERAL App - Instalação</title>
+    
+    <!-- SEO & Meta Tags -->
+    <meta name="description" content="GENERAL - Seu assistente de inteligência artificial para atendimento a sinistros e emergências rodoviárias.">
+    
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+
+    <!-- Tailwind Config for Custom Colors/Fonts -->
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                        display: ['Outfit', 'sans-serif'],
+                    },
+                    colors: {
+                        brand: {
+                            50: '#f0fdf4',
+                            100: '#dcfce7',
+                            400: '#4ade80',
+                            500: '#22c55e',
+                            600: '#16a34a',
+                            900: '#14532d',
+                            950: '#052e16',
+                        },
+                        dark: {
+                            900: '#0a0f18',
+                            800: '#111827',
+                            700: '#1f2937',
+                        }
+                    },
+                    animation: {
+                        'float': 'float 6s ease-in-out infinite',
+                        'glow': 'glow 3s ease-in-out infinite alternate',
+                        'slide-up': 'slideUp 0.8s ease-out forwards',
+                    },
+                    keyframes: {
+                        float: {
+                            '0%, 100%': { transform: 'translateY(0)' },
+                            '50%': { transform: 'translateY(-20px)' },
+                        },
+                        glow: {
+                            '0%': { boxShadow: '0 0 15px rgba(34, 197, 94, 0.2)' },
+                            '100%': { boxShadow: '0 0 30px rgba(34, 197, 94, 0.6)' },
+                        },
+                        slideUp: {
+                            '0%': { opacity: '0', transform: 'translateY(40px)' },
+                            '100%': { opacity: '1', transform: 'translateY(0)' },
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        body {
+            background-color: #0a0f18;
+            color: #f3f4f6;
+            overflow-x: hidden;
+        }
+
+        /* Ambient Background Glow */
+        .ambient-glow {
+            position: absolute;
+            width: 600px;
+            height: 600px;
+            background: radial-gradient(circle, rgba(34,197,94,0.15) 0%, rgba(10,15,24,0) 70%);
+            top: -100px;
+            right: -200px;
+            border-radius: 50%;
+            z-index: -1;
+            pointer-events: none;
+        }
+        
+        .ambient-glow-2 {
+            position: absolute;
+            width: 500px;
+            height: 500px;
+            background: radial-gradient(circle, rgba(59,130,246,0.1) 0%, rgba(10,15,24,0) 70%);
+            bottom: -100px;
+            left: -150px;
+            border-radius: 50%;
+            z-index: -1;
+            pointer-events: none;
+        }
+
+        /* Glassmorphism utility */
+        .glass-card {
+            background: rgba(17, 24, 39, 0.6);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+        }
+
+        .gradient-text {
+            background: linear-gradient(135deg, #4ade80 0%, #3b82f6 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+    </style>
+</head>
+<body class="min-h-screen relative font-sans flex flex-col justify-between antialiased">
+    
+    <!-- Background Elements -->
+    <div class="ambient-glow"></div>
+    <div class="ambient-glow-2"></div>
+
+    <!-- Navigation -->
+    <nav class="w-full py-6 px-8 flex justify-between items-center z-10 opacity-0 animate-slide-up">
+        <div class="flex items-center gap-3">
+            <div class="w-10 h-10 rounded-xl flex items-center justify-center overflow-hidden">
+                <img src="logo.png" alt="GENERAL Logo" class="w-full h-full object-cover">
+            </div>
+            <span class="font-display font-bold text-xl tracking-wide text-white">GENERAL</span>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="flex-1 flex flex-col items-center justify-center px-6 py-12 md:py-20 z-10 w-full max-w-7xl mx-auto">
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-20 items-center w-full">
+            
+            <!-- Left Column: Copy & CTA -->
+            <div class="space-y-8 opacity-0 animate-slide-up" style="animation-delay: 0.2s;">
+                <div class="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-brand-500/10 border border-brand-500/20 text-brand-400 text-sm font-medium">
+                    <span class="relative flex h-2 w-2">
+                        <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-brand-400 opacity-75"></span>
+                        <span class="relative inline-flex rounded-full h-2 w-2 bg-brand-500"></span>
+                    </span>
+                    Versão 4.0 Final Disponível
+                </div>
+                
+                <h1 class="font-display text-4xl md:text-5xl lg:text-6xl font-extrabold leading-tight tracking-tight text-white">
+                    Gestão Inteligente de <br />
+                    <span class="gradient-text">Sinistros & Emergências</span>
+                </h1>
+                
+                <p class="text-slate-400 text-lg md:text-xl leading-relaxed max-w-xl font-light">
+                    O aplicativo definitivo para controle da <strong class="text-white font-medium">Golden Hour</strong>, gerenciamento de transbordo e investigação de causa raiz (Ishikawa e 5 Porquês) direto no seu celular.
+                </p>
+
+                <div class="flex flex-col sm:flex-row gap-4 pt-4">
+                    <a href="GENERAL_App.apk" download id="download-btn" class="group relative inline-flex items-center justify-center gap-3 bg-brand-600 hover:bg-brand-500 text-white font-bold py-4 px-8 rounded-2xl transition-all duration-300 animate-glow hover:scale-105 active:scale-95 shadow-xl shadow-brand-500/20">
+                        <i data-lucide="download" class="w-5 h-5 group-hover:-translate-y-1 transition-transform"></i>
+                        <div class="flex flex-col items-start">
+                            <span>Instalar Aplicativo</span>
+                            <span id="download-counter" class="text-[9px] text-brand-200 font-normal">-- downloads</span>
+                        </div>
+                        <div class="absolute inset-0 border-2 border-white/20 rounded-2xl scale-105 opacity-0 group-hover:scale-100 group-hover:opacity-100 transition-all duration-300"></div>
+                    </a>
+                    
+                    <button onclick="document.getElementById('rating-modal').classList.remove('hidden'); document.getElementById('rating-modal').classList.add('flex');" class="inline-flex items-center justify-center gap-2 bg-amber-600/20 hover:bg-amber-600 border border-amber-500/50 text-amber-400 font-semibold py-4 px-8 rounded-2xl transition-all duration-300 hover:text-white">
+                        <i data-lucide="star" class="w-5 h-5"></i> Avaliar Aplicativo
+                    </button>
+                    <button onclick="document.getElementById('features').scrollIntoView({behavior: 'smooth'})" class="inline-flex items-center justify-center gap-2 bg-dark-800 hover:bg-dark-700 border border-slate-700 text-slate-300 font-semibold py-4 px-8 rounded-2xl transition-all duration-300 hover:text-white">
+                        Conhecer Funções
+                    </button>
+                </div>
+            </div>
+
+            <!-- Right Column: Visual App Mockup -->
+            <div class="relative w-full max-w-md mx-auto lg:mx-0 opacity-0 animate-slide-up animate-float" style="animation-delay: 0.4s;">
+                <div class="glass-card rounded-[2.5rem] p-4 relative z-10 border-[6px] border-slate-800/80 overflow-hidden shadow-2xl">
+                    <!-- Fake UI Top Bar -->
+                    <div class="w-full h-6 flex justify-between items-center px-4 mb-4">
+                        <span class="text-[10px] text-slate-400 font-medium">9:41</span>
+                        <div class="flex gap-1.5">
+                            <i data-lucide="signal" class="w-3 h-3 text-slate-400"></i>
+                            <i data-lucide="wifi" class="w-3 h-3 text-slate-400"></i>
+                            <i data-lucide="battery-full" class="w-4 h-4 text-slate-400"></i>
+                        </div>
+                    </div>
+                    
+                    <!-- Feature Highlights inside the "phone" -->
+                    <div class="space-y-4">
+                        <div class="bg-gradient-to-r from-blue-900/40 to-slate-800/40 border border-blue-500/20 p-5 rounded-2xl">
+                            <div class="flex items-center gap-3 mb-2">
+                                <i data-lucide="bot" class="text-blue-400 w-5 h-5"></i>
+                                <h3 class="text-white font-bold text-sm">GENERAL Copilot</h3>
+                            </div>
+                            <p class="text-xs text-slate-400 leading-relaxed">Assistente IA integrado para guiar você durante a triagem e investigação em tempo real.</p>
+                        </div>
+                        
+                        <div class="bg-gradient-to-r from-emerald-900/40 to-slate-800/40 border border-emerald-500/20 p-5 rounded-2xl">
+                            <div class="flex items-center gap-3 mb-2">
+                                <i data-lucide="truck" class="text-emerald-400 w-5 h-5"></i>
+                                <h3 class="text-white font-bold text-sm">Controle de Transbordo</h3>
+                            </div>
+                            <p class="text-xs text-slate-400 leading-relaxed">Gerencie equipes, maquinários e prazos (SLA) para a recuperação eficiente da carga.</p>
+                        </div>
+
+                        <div class="bg-gradient-to-r from-amber-900/40 to-slate-800/40 border border-amber-500/20 p-5 rounded-2xl">
+                            <div class="flex items-center gap-3 mb-2">
+                                <i data-lucide="file-search" class="text-amber-400 w-5 h-5"></i>
+                                <h3 class="text-white font-bold text-sm">Investigação & Dossiê</h3>
+                            </div>
+                            <p class="text-xs text-slate-400 leading-relaxed">Ferramentas de Causa Raiz (Ishikawa, 5 Porquês) e geração de Dossiê PDF automático.</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Decorative Elements -->
+                <div class="absolute top-10 -right-12 w-24 h-24 bg-brand-500/20 rounded-full blur-2xl z-0"></div>
+                <div class="absolute bottom-10 -left-12 w-32 h-32 bg-blue-500/20 rounded-full blur-2xl z-0"></div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Details Section -->
+    <section id="features" class="w-full bg-dark-900/80 border-t border-slate-800/50 py-16 relative z-10">
+        <div class="max-w-7xl mx-auto px-6">
+            <div class="text-center mb-12">
+                <h2 class="font-display text-2xl md:text-3xl font-bold text-white mb-4">Por que utilizar o GENERAL?</h2>
+                <p class="text-slate-400 text-sm md:text-base max-w-2xl mx-auto">O aplicativo centraliza a comunicação, mitiga riscos ambientais e legais, e gera laudos com validade pericial.</p>
+            </div>
+            
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <!-- Card 1 -->
+                <div class="glass-card p-6 rounded-2xl flex flex-col items-center text-center hover:-translate-y-2 transition-transform duration-300">
+                    <div class="w-12 h-12 rounded-full bg-blue-500/10 flex items-center justify-center mb-4">
+                        <i data-lucide="clock" class="text-blue-400 w-6 h-6"></i>
+                    </div>
+                    <h3 class="text-white font-bold mb-2">Ação Rápida</h3>
+                    <p class="text-sm text-slate-400">Fluxo guiado pela Golden Hour, garantindo que as autoridades e seguradoras sejam notificadas no prazo correto.</p>
+                </div>
+                <!-- Card 2 -->
+                <div class="glass-card p-6 rounded-2xl flex flex-col items-center text-center hover:-translate-y-2 transition-transform duration-300">
+                    <div class="w-12 h-12 rounded-full bg-emerald-500/10 flex items-center justify-center mb-4">
+                        <i data-lucide="shield-check" class="text-emerald-400 w-6 h-6"></i>
+                    </div>
+                    <h3 class="text-white font-bold mb-2">Compliance</h3>
+                    <p class="text-sm text-slate-400">Metodologia comprovada de investigação (Ishikawa e 5 Porquês) aceita por empresas seguradoras.</p>
+                </div>
+                <!-- Card 3 -->
+                <div class="glass-card p-6 rounded-2xl flex flex-col items-center text-center hover:-translate-y-2 transition-transform duration-300">
+                    <div class="w-12 h-12 rounded-full bg-purple-500/10 flex items-center justify-center mb-4">
+                        <i data-lucide="file-text" class="text-purple-400 w-6 h-6"></i>
+                    </div>
+                    <h3 class="text-white font-bold mb-2">Relatórios Automáticos</h3>
+                    <p class="text-sm text-slate-400">Gere laudos fotográficos e relatórios completos em PDF com apenas um toque no final da operação.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- SEÇÃO DE AVALIAÇÕES DOS USUÁRIOS -->
+    <section id="reviews-section" class="w-full max-w-7xl mx-auto px-4 py-16 z-10 relative">
+        <div class="text-center mb-10">
+            <h2 class="font-display text-3xl font-extrabold text-white mb-2">Avaliações do Aplicativo</h2>
+            <p class="text-slate-400 text-sm">O que os gestores operacionais dizem sobre o GENERAL</p>
+        </div>
+        <div id="reviews-container" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <!-- Reviews will be populated here -->
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="w-full py-8 text-center text-slate-500 text-xs border-t border-slate-800/30 z-10 mt-auto">
+        <p>&copy; 2026 GENERAL Logística e Sinistros. Todos os direitos reservados.</p>
+        <div class="mt-2 flex flex-col md:flex-row items-center justify-center gap-2 md:gap-4">
+            <span>Suporte Técnico: suporte@general.com.br</span>
+            <span class="hidden md:inline text-slate-700">|</span>
+            <button onclick="document.getElementById('rating-modal').classList.remove('hidden'); document.getElementById('rating-modal').classList.add('flex');" class="text-amber-500 hover:text-amber-400 font-bold transition-colors flex items-center gap-1">
+                <i data-lucide="star" class="w-3 h-3"></i> Avaliar Aplicativo
+            </button>
+        </div>
+    </footer>
+
+    <!-- MODAL DE AVALIAÇÃO DO APP -->
+    <div id="rating-modal" class="hidden fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex-col items-center justify-center p-4">
+        <div class="bg-slate-900 border border-slate-800 w-full max-w-sm rounded-3xl shadow-2xl overflow-hidden animate-slide-up">
+            <div class="p-6 text-center space-y-4">
+                <div class="w-16 h-16 bg-amber-500/20 text-amber-400 rounded-full flex items-center justify-center mx-auto shadow-lg shadow-amber-500/20">
+                    <i data-lucide="star" class="w-8 h-8 fill-amber-400"></i>
+                </div>
+                <h3 class="font-black text-white text-xl">Avalie o GENERAL</h3>
+                <p class="text-sm text-slate-400">Deixe seu comentário e sua nota de 1 a 5 estrelas.</p>
+                
+                <textarea id="rating-comment" rows="3" maxlength="500" placeholder="Seu comentário (máx 500 caracteres)..." class="w-full bg-slate-950 border border-slate-700 rounded-xl p-3 text-sm text-white placeholder-slate-500 mt-2 outline-none focus:border-amber-500/50 transition-colors"></textarea>
+                
+                <div class="flex items-center justify-center gap-2 pt-2 pb-4">
+                    <button onclick="submitAppRating(1)" class="text-slate-600 hover:text-amber-400 transition-colors"><i data-lucide="star" class="w-8 h-8"></i></button>
+                    <button onclick="submitAppRating(2)" class="text-slate-600 hover:text-amber-400 transition-colors"><i data-lucide="star" class="w-8 h-8"></i></button>
+                    <button onclick="submitAppRating(3)" class="text-slate-600 hover:text-amber-400 transition-colors"><i data-lucide="star" class="w-8 h-8"></i></button>
+                    <button onclick="submitAppRating(4)" class="text-slate-600 hover:text-amber-400 transition-colors"><i data-lucide="star" class="w-8 h-8"></i></button>
+                    <button onclick="submitAppRating(5)" class="text-slate-600 hover:text-amber-400 transition-colors"><i data-lucide="star" class="w-8 h-8"></i></button>
+                </div>
+            </div>
+            <div class="p-4 bg-slate-800 flex justify-end gap-2 border-t border-slate-700">
+                <button onclick="document.getElementById('rating-modal').classList.add('hidden'); document.getElementById('rating-modal').classList.remove('flex');" class="px-4 py-2 text-sm font-bold text-slate-400 hover:text-white transition-all">Cancelar</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+    <script>
+        const firebaseConfig = {
+            apiKey: "AIzaSyDxUS2P-vjhEiYsb8rhYOaTxNOZohaEVo4",
+            authDomain: "general-f311a.firebaseapp.com",
+            projectId: "general-f311a",
+            storageBucket: "general-f311a.firebasestorage.app",
+            messagingSenderId: "689040676417",
+            appId: "1:689040676417:web:cd237169036e4bcbeed8c0",
+            measurementId: "G-T3008FMGZS"
+        };
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.firestore();
+
+        // Initialize Lucide Icons
+        lucide.createIcons();
+        
+        // Counter Logic with Firebase
+        const counterRef = db.collection('landing').doc('stats');
+        
+        // Listener for Realtime Count
+        counterRef.onSnapshot(doc => {
+            if (doc.exists) {
+                const count = doc.data().downloads || 1452;
+                document.getElementById('download-counter').textContent = count.toLocaleString('pt-BR') + ' downloads';
+            }
+        });
+        
+        const btn = document.getElementById('download-btn');
+        btn.addEventListener('click', function(e) {
+            // Increment in Firebase
+            db.runTransaction(transaction => {
+                return transaction.get(counterRef).then(doc => {
+                    const newCount = (doc.exists ? doc.data().downloads : 1452) + 1;
+                    transaction.set(counterRef, { downloads: newCount }, { merge: true });
+                });
+            }).catch(e => console.error(e));
+        });
+        
+        // Reviews Logic with Firebase
+        let savedReviews = [];
+        const reviewsRef = db.collection('app_reviews');
+        
+        reviewsRef.orderBy('timestamp', 'desc').onSnapshot(snapshot => {
+            savedReviews = [];
+            snapshot.forEach(doc => savedReviews.push(doc.data()));
+            
+            // Populate mock if empty
+            if (savedReviews.length === 0) {
+                savedReviews = [
+                    { stars: 5, comment: "Excelente aplicativo para gerenciar sinistros. Muito intuitivo!", date: "24/08/2026" },
+                    { stars: 4, comment: "Ajudou bastante a nossa base na aprovação rápida de planos.", date: "25/08/2026" }
+                ];
+            }
+            renderReviews();
+        });
+        
+        function renderReviews() {
+            const container = document.getElementById('reviews-container');
+            if (!container) return;
+            container.innerHTML = savedReviews.map(r => `
+                <div class="bg-slate-900/60 border border-slate-800 rounded-2xl p-6 shadow-xl flex flex-col justify-between">
+                    <div class="flex items-center gap-1 mb-4">
+                        ${Array(5).fill(0).map((_, i) => `<i data-lucide="star" class="w-4 h-4 ${i < r.stars ? 'fill-amber-400 text-amber-400' : 'text-slate-700'}"></i>`).join('')}
+                    </div>
+                    <p class="text-sm text-slate-300 flex-1">"${r.comment}"</p>
+                    <span class="text-[10px] text-slate-500 mt-4 block">${r.date}</span>
+                </div>
+            `).join('');
+            lucide.createIcons();
+        }
+        
+        function submitAppRating(stars) {
+            const comment = document.getElementById('rating-comment').value.trim();
+            if (!comment) {
+                alert('Por favor, deixe um breve comentário.');
+                return;
+            }
+            
+            // Save to Firebase
+            reviewsRef.add({
+                stars: stars,
+                comment: comment,
+                date: new Date().toLocaleDateString('pt-BR'),
+                timestamp: firebase.firestore.FieldValue.serverTimestamp()
+            }).then(() => {
+                alert(`Obrigado pela avaliação de ${stars} estrela(s)!`);
+                document.getElementById('rating-modal').classList.add('hidden');
+                document.getElementById('rating-modal').classList.remove('flex');
+                document.getElementById('rating-comment').value = '';
+            }).catch(e => {
+                console.error("Erro ao salvar avaliação: ", e);
+                alert("Erro ao enviar avaliação. Tente novamente.");
+            });
+        }
+    </script>
+</body>
+</html>
