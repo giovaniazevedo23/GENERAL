@@ -2056,10 +2056,13 @@ Favor confirmar deslocamento da ${base.name}.`);
 
   async syncPredictiveFromSelectedPlan(runAnalysis = false) {
     const select = document.getElementById('pred-plan-select');
+    const dashboard = document.getElementById('predictive-dashboard');
     if (!select || select.value === '') {
       this.showToast('Selecione um plano logístico.', 'warning');
+      if (dashboard) dashboard.classList.add('hidden');
       return;
     }
+    if (dashboard) dashboard.classList.remove('hidden');
     
     const savedPlans = JSON.parse(localStorage.getItem('GENERAL_PAAC_SAVED_PLANS') || '[]');
     let plan = savedPlans[select.value];

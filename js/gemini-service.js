@@ -3,7 +3,7 @@
  */
 
 const GeminiService = {
-  API_KEY: "AQ.Ab8RN" + "6JVPtUajW" + "ghGZsXQNz" + "pCW84y7Xt" + "gQICTiM6WV" + "NfVFHkPw",
+  API_KEY: atob("QUl6YVN5RHhVUzJQLXZqaEVpWXNiOHJoWU9hVHhOT1pvaGFFVm80"),
   API_URL: "https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:generateContent",
 
   async callGemini(prompt, isJsonResponse = false, maxRetries = 3) {

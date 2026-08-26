@@ -890,7 +890,7 @@
         </div>
 
         <!-- Radar Preditivo & Painel de Simulação -->
-        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div id="predictive-dashboard" class="grid grid-cols-1 lg:grid-cols-3 gap-6 hidden">
           
           <!-- Controles de Simulação de Viagem -->
           <div class="lg:col-span-2 bg-slate-900/60 border border-slate-800 rounded-2xl p-6 space-y-5">
@@ -2207,9 +2207,13 @@
   <nav class="mobile-bottom-nav no-print fixed bottom-0 left-0 right-0 z-40 lg:hidden flex items-center justify-around px-2 py-1.5 pb-safe">
     <button data-tab="dashboard" onclick="App.switchTab('dashboard')" class="nav-button mobile-nav-btn flex-1 flex flex-col items-center justify-center py-1 text-slate-400">
       <i data-lucide="layout-dashboard" class="w-5 h-5"></i>
-      <span class="text-[10px] font-medium">Dashboard</span>
+      <span class="text-[10px] font-medium">Início</span>
     </button>
     
+    <button data-tab="saved-plans" onclick="App.switchTab('saved-plans')" class="nav-button mobile-nav-btn flex-1 flex flex-col items-center justify-center py-1 text-slate-400">
+      <i data-lucide="saveAll" class="w-5 h-5 text-emerald-400"></i>
+      <span class="text-[10px] font-medium">Salvos</span>
+    </button>
     <button data-tab="wizard" onclick="App.switchTab('wizard')" class="nav-button mobile-nav-btn flex-1 flex flex-col items-center justify-center py-1 text-slate-400">
       <i data-lucide="shield-alert" class="w-5 h-5"></i>
       <span class="text-[10px] font-medium">Golden Hour</span>
