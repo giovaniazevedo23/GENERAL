@@ -2640,12 +2640,12 @@
       <!-- Corpo -->
       <div class="p-6 space-y-6 overflow-y-auto custom-scroll">
         <div class="grid grid-cols-2 gap-3">
-          <a href="#" onclick="App.showToast('Redirecionando para o WhatsApp...')" class="bg-emerald-950/30 border border-emerald-900/50 rounded-xl p-4 flex flex-col items-center justify-center gap-2 hover:bg-emerald-900/40 transition-colors">
+          <a href="https://wa.me/5586998113557" target="_blank" class="bg-emerald-950/30 border border-emerald-900/50 rounded-xl p-4 flex flex-col items-center justify-center gap-2 hover:bg-emerald-900/40 transition-colors">
             <i data-lucide="message-circle" class="w-6 h-6 text-emerald-400"></i>
             <span class="text-xs font-bold text-emerald-300">Suporte Rápido</span>
             <span class="text-[9px] text-slate-400 text-center">Via WhatsApp (24/7)</span>
           </a>
-          <a href="#" onclick="App.showToast('Abrindo Manual...')" class="bg-blue-950/30 border border-blue-900/50 rounded-xl p-4 flex flex-col items-center justify-center gap-2 hover:bg-blue-900/40 transition-colors">
+          <a href="#" onclick="App.showToast('Em breve: Os tutoriais serão disponibilizados nesta seção.', 'info')" class="bg-blue-950/30 border border-blue-900/50 rounded-xl p-4 flex flex-col items-center justify-center gap-2 hover:bg-blue-900/40 transition-colors">
             <i data-lucide="book-open" class="w-6 h-6 text-blue-400"></i>
             <span class="text-xs font-bold text-blue-300">Manual de Uso</span>
             <span class="text-[9px] text-slate-400 text-center">Guias e Tutoriais</span>
@@ -2654,13 +2654,13 @@
 
         <div>
           <h4 class="text-xs font-bold text-slate-300 mb-2">Enviar uma Dúvida</h4>
-          <textarea rows="3" class="w-full bg-slate-950 border border-slate-800 rounded-lg p-3 text-xs text-white placeholder-slate-500 focus:border-blue-500 focus:outline-none transition-all" placeholder="Descreva seu problema operacional ou erro no sistema..."></textarea>
+          <textarea id="help-duvida-textarea" rows="3" class="w-full bg-slate-950 border border-slate-800 rounded-lg p-3 text-xs text-white placeholder-slate-500 focus:border-blue-500 focus:outline-none transition-all" placeholder="Descreva seu problema operacional ou erro no sistema..."></textarea>
         </div>
       </div>
       
       <!-- Rodapé -->
       <div class="p-5 border-t border-slate-800 bg-slate-900/80">
-        <button onclick="App.showToast('Mensagem enviada com sucesso! Em breve nossa equipe entrará em contato.', 'success'); document.getElementById('help-modal').classList.add('hidden');" class="w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-3 rounded-xl text-xs transition-all flex items-center justify-center gap-2 shadow-lg shadow-blue-900/20">
+        <button onclick="App.sendHelpEmail()" class="w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-3 rounded-xl text-xs transition-all flex items-center justify-center gap-2 shadow-lg shadow-blue-900/20">
           <i data-lucide="send" class="w-4 h-4"></i> Enviar Solicitação
         </button>
       </div>

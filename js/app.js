@@ -1874,8 +1874,15 @@ Favor confirmar deslocamento da ${base.name}.`);
       ...(mockData['TREM'] || [])
     ];
     
-    const companies = [...customProviders, ...allMockData];
+    let companies = [...customProviders, ...allMockData];
     
+    // Filtro de exclusão local
+    let hiddenCarriers = [];
+    try {
+      hiddenCarriers = JSON.parse(localStorage.getItem('general_hidden_carriers')) || [];
+    } catch(e) {}
+    companies = companies.filter(c => !hiddenCarriers.includes(c.name));
+
     if (companies.length === 0) {
       container.innerHTML = `<p class="text-xs text-slate-500 col-span-full">Nenhuma transportadora disponível para este modal no momento.</p>`;
       return;
@@ -1888,8 +1895,13 @@ Favor confirmar deslocamento da ${base.name}.`);
             <h4 class="font-bold text-white text-sm flex items-center gap-2">
               <i data-lucide="${c.icon || 'truck'}" class="w-4 h-4 text-slate-400"></i> ${c.name}
             </h4>
-            <div class="flex items-center gap-1 text-amber-400 text-xs font-bold bg-amber-500/10 px-2 py-0.5 rounded">
-              <i data-lucide="star" class="w-3 h-3 fill-amber-400"></i> ${c.rating || '5.0'}
+            <div class="flex items-center gap-2">
+              <div class="flex items-center gap-1 text-amber-400 text-xs font-bold bg-amber-500/10 px-2 py-0.5 rounded">
+                <i data-lucide="star" class="w-3 h-3 fill-amber-400"></i> ${c.rating || '5.0'}
+              </div>
+              <button onclick="App.hideCarrier('${c.name}')" title="Excluir Transportadora" class="text-slate-500 hover:text-red-400 transition-colors p-1 bg-slate-900 rounded border border-slate-800">
+                <i data-lucide="trash-2" class="w-3 h-3"></i>
+              </button>
             </div>
           </div>
           <div class="space-y-1.5 text-[11px] text-slate-400 mb-4">
@@ -5065,6 +5077,39 @@ Retorne APENAS o HTML da view, usando classes do Tailwind CSS. Não inclua \`\`\
       helper.classList.add('hidden');
     }
     this.showToast('Dicas desativadas. Você pode reativá-las no seu Perfil.', 'info');
+  },
+
+  hideCarrier(name) {
+    if (confirm(`Tem certeza que deseja excluir "${name}" do seu painel? (Apenas para você)`)) {
+      let hiddenCarriers = [];
+      try {
+        hiddenCarriers = JSON.parse(localStorage.getItem('general_hidden_carriers')) || [];
+      } catch(e) {}
+      
+      if (!hiddenCarriers.includes(name)) {
+        hiddenCarriers.push(name);
+        localStorage.setItem('general_hidden_carriers', JSON.stringify(hiddenCarriers));
+      }
+      
+      this.showToast(`Transportadora ${name} ocultada com sucesso.`, 'success');
+      this.renderMarketplace();
+    }
+  },
+
+  sendHelpEmail() {
+    const textarea = document.getElementById('help-duvida-textarea');
+    if (!textarea || !textarea.value.trim()) {
+      this.showToast('Por favor, descreva sua dúvida antes de enviar.', 'warning');
+      return;
+    }
+    const body = encodeURIComponent(textarea.value.trim());
+    const email = 'generalia.suporte@gmail.com';
+    const subject = encodeURIComponent('Dúvida/Suporte - GENERAL App');
+    window.location.href = `mailto:${email}?subject=${subject}&body=${body}`;
+    
+    this.showToast('Redirecionando para o seu aplicativo de e-mail...', 'success');
+    document.getElementById('help-modal').classList.add('hidden');
+    textarea.value = '';
   }
 };
 
