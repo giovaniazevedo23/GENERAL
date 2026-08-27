@@ -142,11 +142,61 @@ const App = {
     if (btn) btn.classList.remove('hidden');
   },
 
-  checkAuth() {
+  async syncFromFirebase() {
+    if (!window.db || !appState.currentUser || !appState.currentUser.id) return;
+    try {
+      const userId = appState.currentUser.id;
+      const doc = await window.db.collection('users_sync').doc(userId).get();
+      if (doc.exists) {
+        const data = doc.data();
+        
+        const mergeArrays = (localKey, remoteArray, idField) => {
+           if (!remoteArray) return;
+           let localArray = JSON.parse(localStorage.getItem(localKey) || '[]');
+           remoteArray.forEach(remoteItem => {
+              if (!localArray.find(localItem => localItem[idField] === remoteItem[idField])) {
+                 localArray.push(remoteItem);
+              }
+           });
+           localStorage.setItem(localKey, JSON.stringify(localArray));
+        };
+        
+        mergeArrays('general_saved_plans', data.general_saved_plans, 'id');
+        mergeArrays('GENERAL_PAAC_SAVED_PLANS', data.GENERAL_PAAC_SAVED_PLANS, 'id');
+        mergeArrays('general_hidden_carriers', data.general_hidden_carriers, 'id');
+        
+        if (data.general_saved_plans || data.GENERAL_PAAC_SAVED_PLANS) {
+           appState.savedPlans = JSON.parse(localStorage.getItem('GENERAL_PAAC_SAVED_PLANS') || '[]');
+           if(document.getElementById('saved-plans-container')) this.renderSavedPlansTab();
+        }
+      }
+      
+      await this.syncToFirebase();
+    } catch(e) {
+      console.error("Erro na sincronização Firebase:", e);
+    }
+  },
+
+  async syncToFirebase() {
+    if (!window.db || !appState.currentUser || !appState.currentUser.id) return;
+    try {
+      const userId = appState.currentUser.id;
+      await window.db.collection('users_sync').doc(userId).set({
+        general_saved_plans: JSON.parse(localStorage.getItem('general_saved_plans') || '[]'),
+        GENERAL_PAAC_SAVED_PLANS: JSON.parse(localStorage.getItem('GENERAL_PAAC_SAVED_PLANS') || '[]'),
+        general_hidden_carriers: JSON.parse(localStorage.getItem('general_hidden_carriers') || '[]')
+      }, { merge: true });
+    } catch(e) {
+      console.error("Erro ao subir dados para o Firebase:", e);
+    }
+  },
+
+  async checkAuth() {
     const userJson = localStorage.getItem('general_user');
     if (userJson) {
       appState.currentUser = JSON.parse(userJson);
       document.getElementById('login-overlay').classList.add('hidden');
+      await this.syncFromFirebase();
     } else {
       document.getElementById('login-overlay').classList.remove('hidden');
       // Generate automatic ID
@@ -1743,6 +1793,7 @@ Favor confirmar deslocamento da ${base.name}.`);
     savedPlans = savedPlans.filter(p => p.id !== savedPlan.id);
     savedPlans.push(savedPlan);
     localStorage.setItem('general_saved_plans', JSON.stringify(savedPlans));
+        this.syncToFirebase();
     if (window.db) window.db.collection('saved_plans').doc(savedPlan.id).set(savedPlan).catch(e => console.error("Firebase sync err:", e));
     
     this.showToast('Plano salvo no banco de dados!');
@@ -2443,13 +2494,14 @@ Favor confirmar deslocamento da ${base.name}.`);
         linkedLogisticsPlan: select.value,
         isSigned: true,
         data: {
-          content: this.planType === 'ia' ? 'Plano 5W2H gerado por IA' : (document.getElementById('free-plan-editor')?.value || '')
+          content: this.planType === 'ia' ? (document.getElementById('ai-plan-5w2h-container')?.innerHTML || '') : (document.getElementById('free-plan-editor')?.value || '')
         }
       };
 
       let savedPlans = JSON.parse(localStorage.getItem('general_saved_plans') || '[]');
       savedPlans.push(savedPlan);
       localStorage.setItem('general_saved_plans', JSON.stringify(savedPlans));
+        this.syncToFirebase();
       if (window.db) window.db.collection('saved_plans').doc(savedPlan.id).set(savedPlan).catch(e => console.error("Firebase sync err:", e));
       
       this.showToast('Plano de Ação salvo de forma avulsa com sucesso!');
@@ -3229,6 +3281,7 @@ ${NotificationHub.getTemplate('WHATSAPP_EMERGENCIA', inc)}
 
     selectedPlan.hasIncident = true;
     localStorage.setItem('GENERAL_PAAC_SAVED_PLANS', JSON.stringify(appState.savedPlans));
+      this.syncToFirebase();
 
     let lat = -23.5505; // Default (SP)
     let lng = -46.6333;
@@ -3368,6 +3421,7 @@ ${NotificationHub.getTemplate('WHATSAPP_EMERGENCIA', inc)}
     appState.savedPlans = appState.savedPlans || [];
     appState.savedPlans.push(plan);
     localStorage.setItem('GENERAL_PAAC_SAVED_PLANS', JSON.stringify(appState.savedPlans));
+      this.syncToFirebase();
 
     this.showToast('Plano Logístico salvo e aprovado com sucesso!', 'success');
     
@@ -4545,8 +4599,25 @@ Retorne APENAS o HTML da view, usando classes do Tailwind CSS. Não inclua \`\`\
   /* =======================================================
    * DASHBOARD
    * ======================================================= */
+  _generatePDFFromHTML(htmlString, filename) {
+    if (typeof html2pdf === 'undefined') {
+      this.showToast('Módulo de PDF não carregado!', 'error');
+      return;
+    }
+    const container = document.createElement('div');
+    container.innerHTML = htmlString;
+    const opt = {
+      margin:       10,
+      filename:     filename,
+      image:        { type: 'jpeg', quality: 0.98 },
+      html2canvas:  { scale: 2, useCORS: true },
+      jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
+    };
+    html2pdf().from(container).set(opt).save();
+    this.showToast('Download do PDF iniciado!', 'success');
+  },
+
   downloadPlanPDF(planData = null) {
-    const printWindow = window.open('', '', 'width=900,height=700');
     
     const getVal = (key, id, fallback = 'Não preenchido') => {
       if (planData) return planData[key] || fallback;
@@ -4619,7 +4690,7 @@ Retorne APENAS o HTML da view, usando classes do Tailwind CSS. Não inclua \`\`\
         actionPlanHTML = '<p style="color: #64748b; font-style: italic;">Nenhum plano de ação 5W2H gerado para esta operação.</p>';
     }
     
-    printWindow.document.write(`
+    this._generatePDFFromHTML(`
       <!DOCTYPE html>
       <html>
       <head>
@@ -4724,29 +4795,6 @@ Retorne APENAS o HTML da view, usando classes do Tailwind CSS. Não inclua \`\`\
           </div>
         </div>
 
-        <div class="section">
-          <h2>4. Parecer de Auditoria (IA Pré-Viagem)</h2>
-          <div style="margin-bottom: 15px;">
-            <strong style="color: #475569; font-size: 13px;">Perigos Críticos Detectados:</strong>
-            <div class="action-plan-content" style="margin-top: 5px; padding: 10px; background: #fff1f2; border: 1px solid #fecdd3; border-radius: 5px;">
-              ${warningsHTML}
-            </div>
-          </div>
-          <div>
-            <strong style="color: #475569; font-size: 13px;">Prescrições Preventivas:</strong>
-            <div class="action-plan-content" style="margin-top: 5px; padding: 10px; background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 5px;">
-              ${prescriptionsHTML}
-            </div>
-          </div>
-        </div>
-
-        <div class="section action-plan">
-          <h2>5. Plano de Ação (5W2H) & EPIs Mínimos</h2>
-          <div class="action-plan-content">
-            ${actionPlanHTML}
-          </div>
-        </div>
-        
         <div class="signature">
           <div>
             <div class="sig-line">${driver !== 'Não preenchido' ? driver : 'Assinatura do Condutor'}</div>
@@ -4759,13 +4807,9 @@ Retorne APENAS o HTML da view, usando classes do Tailwind CSS. Não inclua \`\`\
         </div>
       </body>
       </html>
-    `);
+    `, 'Dossie_GENERAL.pdf');
     
-    printWindow.document.close();
-    printWindow.focus();
-    setTimeout(() => {
-      printWindow.print();
-    }, 1000);
+    
   },
 
   setupInputMasks() {
@@ -5045,9 +5089,8 @@ Retorne APENAS o HTML da view, usando classes do Tailwind CSS. Não inclua \`\`\
   downloadActionPlanPDF(id) {
     const inc = appState.incidents.find(i => i.id === id);
     if (!inc) return;
-    const printWindow = window.open('', '', 'width=900,height=700');
-    printWindow.document.write(`<html><head><title>Plano de Ação - ${id}</title><style>body{font-family:'Inter',sans-serif;padding:30px;color:#1e293b;}</style></head><body><h2>Plano de Ação Tático - Ocorrência ${id}</h2><p>Documento gerado automaticamente pelo sistema Antigravity.</p><div style="margin-top:20px;">${inc.actionPlanHTML || 'Plano preenchido manualmente.'}</div><script>setTimeout(()=>{window.print();},500);</script></body></html>`);
-    printWindow.document.close();
+    this._generatePDFFromHTML(`<html><head><title>Plano de Ação - ${id}</title><style>body{font-family:'Inter',sans-serif;padding:30px;color:#1e293b;}</style></head><body><h2>Plano de Ação Tático - Ocorrência ${id}</h2><p>Documento gerado automaticamente pelo sistema Antigravity.</p><div style="margin-top:20px;">${inc.actionPlanHTML || 'Plano preenchido manualmente.'}</div></body></html>`, 'Dossie_GENERAL.pdf');
+    
   },
   
   downloadSavedActionPlanPDF(id) {
@@ -5057,17 +5100,15 @@ Retorne APENAS o HTML da view, usando classes do Tailwind CSS. Não inclua \`\`\
       return;
     }
     const htmlContent = plan.data.actionPlanHTML || plan.data.content || 'Detalhes do plano tático não disponíveis em HTML.';
-    const printWindow = window.open('', '', 'width=900,height=700');
-    printWindow.document.write(`<html><head><title>Plano de Ação - ${id}</title><style>body{font-family:'Inter',sans-serif;padding:30px;color:#1e293b;}</style></head><body><h2>Plano de Ação Tático Independente - ${id}</h2><p>Documento gerado automaticamente pelo sistema Antigravity.</p><p>Vinculado ao Plano Logístico: <b>${plan.linkedLogisticsPlan}</b></p><div style="margin-top:20px;">${htmlContent}</div><script>setTimeout(()=>{window.print();},500);</script></body></html>`);
-    printWindow.document.close();
+    this._generatePDFFromHTML(`<html><head><title>Plano de Ação - ${id}</title><style>body{font-family:'Inter',sans-serif;padding:30px;color:#1e293b;}</style></head><body><h2>Plano de Ação Tático Independente - ${id}</h2><p>Documento gerado automaticamente pelo sistema Antigravity.</p><p>Vinculado ao Plano Logístico: <b>${plan.linkedLogisticsPlan}</b></p><div style="margin-top:20px;">${htmlContent}</div></body></html>`, 'Dossie_GENERAL.pdf');
+    
   },
   
   downloadTransshipmentPDF(id) {
     const inc = appState.incidents.find(i => i.id === id);
     if (!inc) return;
-    const printWindow = window.open('', '', 'width=900,height=700');
-    printWindow.document.write(`<html><head><title>Plano de Transbordo - ${id}</title><style>body{font-family:'Inter',sans-serif;padding:30px;color:#1e293b;}</style></head><body><h2>Plano Operacional de Transbordo - Ocorrência ${id}</h2><p>Operação autorizada e monitorada.</p><div style="margin-top:20px; font-weight:bold;">Técnico Responsável: ${inc.responsible || 'N/A'}</div><script>setTimeout(()=>{window.print();},500);</script></body></html>`);
-    printWindow.document.close();
+    this._generatePDFFromHTML(`<html><head><title>Plano de Transbordo - ${id}</title><style>body{font-family:'Inter',sans-serif;padding:30px;color:#1e293b;}</style></head><body><h2>Plano Operacional de Transbordo - Ocorrência ${id}</h2><p>Operação autorizada e monitorada.</p><div style="margin-top:20px; font-weight:bold;">Técnico Responsável: ${inc.responsible || 'N/A'}</div></body></html>`, 'Dossie_GENERAL.pdf');
+    
   },
 
   disableCopilotHelper() {
@@ -5089,6 +5130,7 @@ Retorne APENAS o HTML da view, usando classes do Tailwind CSS. Não inclua \`\`\
       if (!hiddenCarriers.includes(name)) {
         hiddenCarriers.push(name);
         localStorage.setItem('general_hidden_carriers', JSON.stringify(hiddenCarriers));
+        this.syncToFirebase();
       }
       
       this.showToast(`Transportadora ${name} ocultada com sucesso.`, 'success');
