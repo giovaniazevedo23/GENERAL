@@ -297,6 +297,7 @@
               <option value="Avaria Térmica / Carga">Avaria Térmica / Carga</option>
               <option value="Vazamento Químico">Vazamento Químico</option>
               <option value="Saída de Pista">Saída de Pista</option>
+                <option value="Outros">Outros</option>
             </select>
           </div>
           <div class="flex-1">
@@ -336,7 +337,7 @@
 
 
       <!-- ============================================== -->
-      <!-- VIEW: PLANO LOG�?STICO & AUDITORIA DE IA (PRE-TRIP) -->
+      <!-- VIEW: PLANO LOGÍSTICO & AUDITORIA DE IA (PRE-TRIP) -->
       <!-- ============================================== -->
       <div id="view-planner" class="tab-view hidden space-y-6">
         
@@ -344,7 +345,7 @@
         <div class="bg-gradient-to-r from-cyan-950 via-slate-900 to-blue-950 border border-cyan-800/40 p-6 rounded-2xl flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
           <div>
             <div class="flex items-center gap-2 mb-1">
-              <span class="text-xs font-bold bg-cyan-500/20 text-cyan-300 border border-cyan-500/30 px-2.5 py-0.5 rounded-full">PLANO LOG�?STICO IA</span>
+              <span class="text-xs font-bold bg-cyan-500/20 text-cyan-300 border border-cyan-500/30 px-2.5 py-0.5 rounded-full">PLANO LOGÍSTICO IA</span>
               <span class="text-xs text-slate-400">Auditoria Preditiva & Auto-Otimizador para 100% Seguro</span>
             </div>
             <h2 class="text-xl font-black text-white">Elaboração, Auditoria & Reformulação do Plano Logístico</h2>
@@ -649,7 +650,12 @@
                 </div>
               </div>
               <div id="planner-map-container" class="mt-4 hidden flex-col">
-                <label class="block text-slate-400 font-semibold mb-2">Traçado da Rota (AWS Location Service):</label>
+                <div class="flex flex-col sm:flex-row sm:items-center justify-between mb-2 gap-2">
+                  <label class="block text-slate-400 font-semibold">Traçado da Rota (AWS Location Service):</label>
+                  <button type="button" onclick="App.viewRouteEvaluationsHistory()" class="bg-indigo-600/20 hover:bg-indigo-600/30 text-indigo-400 text-[10px] font-bold py-1.5 px-3 rounded-lg transition-all border border-indigo-500/30 flex items-center justify-center gap-1">
+                    <i data-lucide="history" class="w-3 h-3"></i> Histórico da Rodovia
+                  </button>
+                </div>
                 <div id="planner-map" class="w-full h-64 rounded-xl border border-slate-700 relative z-0"></div>
               </div>
             </div>
@@ -1142,7 +1148,7 @@
       </div>
 
       <!-- ============================================== -->
-      <!-- VIEW: COPILOT T�?TICO 24H (CHATBOT DE IA) -->
+      <!-- VIEW: COPILOT TÁTICO 24H (CHATBOT DE IA) -->
       <!-- ============================================== -->
       <div id="view-copilot" class="tab-view hidden space-y-6">
         
@@ -1315,7 +1321,7 @@
               <label class="block text-xs font-bold text-slate-300 mb-1">Ação</label>
               <select id="comm-action" onchange="App.handleCommActionChange()" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-sm text-slate-200 focus:border-blue-500 outline-none">
                 <option value="LIGAR">Ligar</option>
-                <option value="ACIONAR">Acionar</option>
+                
                 <option value="NOTIFICAR">Notificar</option>
               </select>
             </div>
@@ -2118,12 +2124,23 @@
               <option value="Avaria Térmica / Carga">Avaria Térmica / Carga</option>
               <option value="Vazamento Químico">Vazamento Químico</option>
               <option value="Saída de Pista">Saída de Pista</option>
+                <option value="Outros">Outros</option>
             </select>
           </div>
-          <div>
-            <label class="block text-xs font-semibold text-slate-300 mb-1">Cidade / Estado (Referência GPS):</label>
-            <input required name="city" type="text" placeholder="Ex: Curitiba / PR" class="w-full bg-slate-950 border border-slate-800 rounded-lg p-2 text-xs text-white" />
-          </div>
+          
+            <div>
+              <label class="block text-xs font-semibold text-slate-300 mb-1">Estado (Referência GPS):</label>
+              <select id="inc-state" name="state" required onchange="App.loadCities('inc-state', 'inc-city')" class="w-full bg-slate-950 border border-slate-800 rounded-lg p-2 text-xs text-white">
+                <option value="">Selecione o Estado</option>
+              </select>
+            </div>
+            <div>
+              <label class="block text-xs font-semibold text-slate-300 mb-1">Cidade (Referência GPS):</label>
+              <select id="inc-city" name="city" required class="w-full bg-slate-950 border border-slate-800 rounded-lg p-2 text-xs text-white">
+                <option value="">Selecione a Cidade</option>
+              </select>
+            </div>
+
           <div>
             <label class="block text-xs font-semibold text-slate-300 mb-1">CEP (Referência GPS Exata):</label>
             <input name="cep" type="text" placeholder="Ex: 00000-000" class="w-full bg-slate-950 border border-slate-800 rounded-lg p-2 text-xs text-white" />
@@ -2445,7 +2462,24 @@
     </div>
   </div>
 
-  <!-- MODAL DE AVALIAÇÃO DE ROTA -->
+  
+    <!-- MODAL DE HISTORICO DE ROTA -->
+    <div id="route-eval-history-modal" class="hidden fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
+      <div class="bg-slate-900 border border-slate-800 w-full max-w-md rounded-2xl shadow-2xl flex flex-col max-h-[80vh]">
+        <div class="flex items-center justify-between p-5 border-b border-slate-800 shrink-0">
+          <h3 class="font-bold text-white text-sm flex items-center gap-2">
+            <i data-lucide="history" class="w-4 h-4 text-indigo-400"></i>
+            Histórico de Avaliações
+          </h3>
+          <button onclick="document.getElementById('route-eval-history-modal').classList.add('hidden')" class="text-slate-400 hover:text-white"><i data-lucide="x" class="w-4 h-4"></i></button>
+        </div>
+        <div class="p-5 overflow-y-auto space-y-3" id="route-eval-history-list">
+          <!-- preenchido dinamicamente via JS -->
+        </div>
+      </div>
+    </div>
+
+    <!-- MODAL DE AVALIAÇÃO DE ROTA -->
   <div id="route-eval-modal" class="hidden fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
     <div class="bg-slate-900 border border-slate-800 w-full max-w-sm rounded-2xl shadow-2xl flex flex-col">
       <div class="flex items-center justify-between p-5 border-b border-slate-800">

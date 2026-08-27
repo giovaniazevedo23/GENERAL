@@ -35,44 +35,64 @@ window.AWSLocation = {
    * @param {string} text - Endereço (ex: "Curitiba, PR")
    * @returns {Promise<Array>} - Retorna [lat, lng]
    */
-  async geocode(text) {
+    async geocode(text) {
+    
     if (!text || text.trim() === '') return null;
 
-    const url = `https://places.geo.${this.config.region}.api.aws/v2/geocode?key=${encodeURIComponent(this.config.apiKey)}`;
-    
-    try {
+    // Tentativa 1: API Brasil (CEP v2) para precisão máxima, se houver um CEP na query
+    const cepMatch = text.match(/\b(\d{5}-?\d{3})\b/);
+    if (cepMatch) {
+      const cepStr = cepMatch[1].replace(/\D/g, '');
+      try {
+        const brasilApiUrl = `https://brasilapi.com.br/api/cep/v2/${cepStr}`;
+        const resBrasil = await fetch(brasilApiUrl);
+        if (resBrasil.ok) {
+          const dataBrasil = await resBrasil.json();
+          if (dataBrasil.location && dataBrasil.location.coordinates && dataBrasil.location.coordinates.latitude && dataBrasil.location.coordinates.longitude) {
+            console.log("Geocode resolvido via Brasil API para CEP:", cepStr);
+            return [parseFloat(dataBrasil.location.coordinates.latitude), parseFloat(dataBrasil.location.coordinates.longitude)];
+          }
+        }
+      } catch (e) {
+        console.warn('Brasil API CEP v2 falhou:', e);
+      }
+    }
+
+    // Tentativa 2: AWS Location Service
+try {
+      const url = `https://places.geo.${this.config.region}.api.aws/v2/geocode?key=${encodeURIComponent(this.config.apiKey)}`;
       const response = await fetch(url, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          QueryText: text,
-          MaxResults: 1
-        })
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ QueryText: text, MaxResults: 1 })
       });
 
-      if (!response.ok) {
-        if (response.status === 403) {
-          console.error('AWS Location API Key inválida.');
-        }
-        throw new Error(`AWS Geocode Error: ${response.statusText}`);
-      }
-
-      const data = await response.json();
-      if (data.ResultItems && data.ResultItems.length > 0) {
-        // AWS v2 retorna Position como [Longitude, Latitude] direto no item
-        const point = data.ResultItems[0].Position;
-        if (point && point.length === 2) {
-          return [point[1], point[0]]; // Retornar [Lat, Lng]
+      if (response.ok) {
+        const data = await response.json();
+        if (data.ResultItems && data.ResultItems.length > 0) {
+          const point = data.ResultItems[0].Position;
+          if (point && point.length === 2) return [point[1], point[0]];
         }
       }
-      
-      return null;
     } catch (error) {
-      console.error('Falha na geocodificação:', error);
-      return null;
+      console.warn('AWS Geocode falhou, tentando fallback OpenStreetMap...', error);
     }
+    
+    // Fallback para OpenStreetMap Nominatim
+    try {
+      const nominatimUrl = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(text)}&limit=1`;
+      const res = await fetch(nominatimUrl);
+      if (res.ok) {
+        const data = await res.json();
+        if (data && data.length > 0) {
+          return [parseFloat(data[0].lat), parseFloat(data[0].lon)];
+        }
+      }
+    } catch (err) {
+      console.error('Fallback Nominatim falhou:', err);
+    }
+
+    return null;
   },
 
   /**
