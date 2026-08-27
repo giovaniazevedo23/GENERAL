@@ -381,6 +381,7 @@ const App = {
       
       populateSelect('plan-origin-state');
       populateSelect('plan-dest-state');
+      populateSelect('inc-state');
     } catch (e) {
       console.error("Erro ao carregar estados", e);
     }
@@ -3276,7 +3277,8 @@ ${NotificationHub.getTemplate('WHATSAPP_EMERGENCIA', inc)}
 
   async submitNewIncident(e) {
     e.preventDefault();
-    const form = e.target;
+    try {
+      const form = e.target;
     const formData = new FormData(form);
     
     const planIdx = formData.get('planId');
@@ -3299,9 +3301,11 @@ ${NotificationHub.getTemplate('WHATSAPP_EMERGENCIA', inc)}
       if (window.AWSLocation) {
         this.showToast('Buscando localização aproximada via satélite...');
         
+        const state = formData.get('state') || '';
         const city = formData.get('city') || '';
+        const cityStr = city ? `${city} / ${state}` : '';
         const cep = formData.get('cep') || '';
-        const query = cep ? `${cep}, ${city}, Brazil` : `${city}, Brazil`;
+        const query = cep ? `${cep}, ${cityStr}, Brazil` : `${cityStr}, Brazil`;
         
         console.log('AWS Geocode Query:', query);
         
@@ -3369,7 +3373,7 @@ ${NotificationHub.getTemplate('WHATSAPP_EMERGENCIA', inc)}
       trackingLink: formData.get('trackingLink'),
       road: 'Ver Link GPS',
       km: '',
-      city: formData.get('city'),
+      city: cityStr,
       cep: formData.get('cep') || '',
       plate: formData.get('plate'),
       driverName: formData.get('driverName'),
@@ -3407,6 +3411,12 @@ ${NotificationHub.getTemplate('WHATSAPP_EMERGENCIA', inc)}
     }, 300);
 
     this.showToast('Nova ocorrência criada com sucesso e mapeada!');
+    } catch (err) {
+      console.error('Erro ao criar ocorrencia:', err);
+      this.showToast('Ocorreu um erro interno: ' + err.message, 'error');
+    } finally {
+      this.closeNewIncidentModal();
+    }
   },
 
   saveLogisticsPlan() {
@@ -4629,7 +4639,14 @@ Retorne APENAS o HTML da view, usando classes do Tailwind CSS. Não inclua \`\`\
       html2canvas:  { scale: 2, useCORS: true },
       jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
     };
-    html2pdf().from(container).set(opt).save();
+    
+      html2pdf().from(container).set(opt).toPdf().get('pdf').then(function (pdf) {
+        const blob = pdf.output('bloburl');
+        window.open(blob, '_blank');
+      }).catch(err => {
+        console.error("PDF generation error:", err);
+      });
+
     this.showToast('Download do PDF iniciado!', 'success');
   },
 
