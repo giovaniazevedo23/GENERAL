@@ -4581,6 +4581,47 @@ Retorne APENAS o HTML da view, usando classes do Tailwind CSS. Não inclua \`\`\
     this.closeProviderEvaluationModal();
   },
 
+  
+  viewRouteEvaluationsHistory() {
+    const origin = document.getElementById('plan-origin-city')?.value || '';
+    const dest = document.getElementById('plan-dest-city')?.value || '';
+    
+    if (!origin || !dest) {
+      this.showToast('Preencha a origem e destino (cidade) para ver as avaliações da rota.', 'warning');
+      return;
+    }
+    
+    const key = `route_eval_${origin}_${dest}`;
+    const saved = localStorage.getItem(key);
+    const container = document.getElementById('route-eval-history-list');
+    
+    if (!saved) {
+      container.innerHTML = '<div class="text-slate-400 text-xs text-center py-4">Nenhuma avaliação encontrada para esta rota no histórico.</div>';
+    } else {
+      try {
+        const evals = JSON.parse(saved);
+        if (evals.length === 0) {
+          container.innerHTML = '<div class="text-slate-400 text-xs text-center py-4">Nenhuma avaliação encontrada.</div>';
+        } else {
+          container.innerHTML = evals.map(e => `
+            <div class="bg-slate-950 border border-slate-800 rounded-xl p-3">
+              <div class="flex items-center justify-between mb-2">
+                <span class="text-xs font-bold text-emerald-400">${e.score} Estrelas</span>
+                <span class="text-[10px] text-slate-500">${new Date(e.date).toLocaleDateString()}</span>
+              </div>
+              <p class="text-xs text-slate-300 italic">"${e.comments || 'Sem comentários adicionais.'}"</p>
+            </div>
+          `).join('');
+        }
+      } catch (e) {
+        container.innerHTML = '<div class="text-rose-400 text-xs text-center py-4">Erro ao carregar avaliações.</div>';
+      }
+    }
+    
+    document.getElementById('route-eval-history-modal').classList.remove('hidden');
+    if (window.lucide) window.lucide.createIcons();
+  },
+
   openRouteEvaluationModal(planId) {
     const plan = appState.savedPlans.find(p => p.id === planId);
     if (!plan) return;
