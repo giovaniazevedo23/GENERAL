@@ -2084,7 +2084,7 @@ Favor confirmar deslocamento da ${base.name}.`);
       const savedPlans = JSON.parse(localStorage.getItem('GENERAL_PAAC_SAVED_PLANS') || '[]');
       const logPlans = savedPlans.filter(p => p.type === 'LOGISTICO');
       select.innerHTML = '<option value="">Selecione um Plano Logístico Aprovado...</option>' + 
-        logPlans.map((p, idx) => `<option value="${idx}">${p.id} - ${p.clientName} (${p.origin} -> ${p.destination})</option>`).join('');
+        logPlans.map((p, idx) => `<option value="${idx}">${p.id || p.code} - ${p.clientName || (p.data && p.data.clientName) || 'Cliente N/A'} (${p.origin || (p.data && p.data.origin) || 'Origem N/A'} -> ${p.destination || (p.data && p.data.destination) || 'Destino N/A'})</option>`).join('');
     }
   },
 
@@ -2442,7 +2442,12 @@ Favor confirmar deslocamento da ${base.name}.`);
     logPlans.forEach(p => {
       const opt = document.createElement('option');
       opt.value = p.id;
-      opt.textContent = `${p.id} - ${p.client} (${p.origin} -> ${p.destination})`;
+      
+        const cName = p.client || p.clientName || (p.data && p.data.clientName) || 'Cliente N/A';
+        const orig = p.origin || (p.data && p.data.origin) || 'Origem N/A';
+        const dest = p.destination || (p.data && p.data.destination) || 'Destino N/A';
+        opt.textContent = `${p.id || p.code} - ${cName} (${orig} -> ${dest})`;
+
       select.appendChild(opt);
     });
     this.handlePlanLinkChange();
@@ -3343,8 +3348,12 @@ ${NotificationHub.getTemplate('WHATSAPP_EMERGENCIA', inc)}
          if (appState.currentIncidentId === editId) this.renderCurrentIncident();
          
          setTimeout(() => {
-           if (window.mapController) {
-             window.mapController.updateMapLocation(lat, lng);
+                      if (window.mapController) {
+             if (!window.mapController.map) {
+                 window.mapController.init(lat, lng);
+             } else {
+                 window.mapController.updateMapLocation(lat, lng);
+             }
              window.mapController.invalidateSize();
            }
          }, 300);
@@ -3387,10 +3396,14 @@ ${NotificationHub.getTemplate('WHATSAPP_EMERGENCIA', inc)}
     
     // Atualizar mapa após exibir a tab
     setTimeout(() => {
-      if (window.mapController) {
-        window.mapController.updateMapLocation(lat, lng);
-        window.mapController.invalidateSize();
-      }
+                 if (window.mapController) {
+             if (!window.mapController.map) {
+                 window.mapController.init(lat, lng);
+             } else {
+                 window.mapController.updateMapLocation(lat, lng);
+             }
+             window.mapController.invalidateSize();
+           }
     }, 300);
 
     this.showToast('Nova ocorrência criada com sucesso e mapeada!');
