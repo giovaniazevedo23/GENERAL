@@ -105,54 +105,116 @@ try {
   async calculateRoute(origin, destination) {
     if (!origin || !destination) return null;
 
-    const url = `https://routes.geo.${this.config.region}.api.aws/v2/routes?key=${encodeURIComponent(this.config.apiKey)}`;
-    
+    // Tentativa 1: AWS Location Service Routes v2
     try {
+      const url = `https://routes.geo.${this.config.region}.api.aws/v2/routes?key=${encodeURIComponent(this.config.apiKey)}`;
       const response = await fetch(url, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          Origin: [origin[1], origin[0]],
+          Origin: [origin[1], origin[0]],          // AWS espera [Lng, Lat]
           Destination: [destination[1], destination[0]],
-          TravelMode: "Truck",
+          TravelMode: "Car",                         // "Truck" pode ser bloqueado sem contrato
           DistanceUnit: "Kilometers",
-          LegGeometryFormat: "Simple"
+          LegGeometryFormat: "Simple",              // Solicita LineString no retorno
+          OptimizeRoutingFor: "FastestRoute"
         })
       });
 
-      if (!response.ok) {
-        throw new Error(`AWS Route Error: ${response.statusText}`);
+      if (response.ok) {
+        const data = await response.json();
+        if (data.Routes && data.Routes.length > 0) {
+          const route = data.Routes[0];
+          let geometry = [];
+
+          // Percorre todos os Legs para montar a geometria completa
+          if (route.Legs && route.Legs.length > 0) {
+            for (const leg of route.Legs) {
+              const ls = leg.Geometry && leg.Geometry.LineString;
+              if (ls && ls.length > 0) {
+                // AWS retorna [Lng, Lat] → converte para [Lat, Lng] (Leaflet)
+                geometry.push(...ls.map(coord => [coord[1], coord[0]]));
+              }
+            }
+          }
+
+          const summary = route.Summary || {};
+          // A v2 pode usar Distance (km já) ou TravelDistance (metros)
+          let dist = summary.Distance ?? summary.TravelDistance ?? 0;
+          if (dist > 5000) dist = dist / 1000; // converte metros → km
+
+          const duration = summary.Duration ?? summary.DurationSeconds ?? 0;
+
+          console.log(`[AWS Route] ${dist.toFixed(1)} km | ${(duration/3600).toFixed(1)} h | ${geometry.length} pontos`);
+
+          // Se geometria vazia (AWS não entregou), tenta OSRM como fallback de geometria
+          if (geometry.length === 0) {
+            console.warn('[AWS Route] Geometria vazia, buscando geometria via OSRM...');
+            geometry = await this._fetchOSRMGeometry(origin, destination);
+          }
+
+          return { distanceKm: dist, durationSeconds: duration, geometry };
+        }
+      } else {
+        const errBody = await response.text().catch(() => '');
+        console.warn(`[AWS Route] Falha HTTP ${response.status}:`, errBody);
       }
+    } catch (error) {
+      console.warn('[AWS Route] Exceção na roteirização AWS:', error.message);
+    }
+
+    // Tentativa 2: OSRM (OpenStreetMap Routing Machine) — gratuito, sem chave
+    console.log('[AWS Route] Usando OSRM como fallback de roteirização...');
+    return await this._calculateRouteOSRM(origin, destination);
+  },
+
+  /**
+   * Roteirização via OSRM (fallback gratuito baseado em OpenStreetMap).
+   * @param {Array} origin - [lat, lng]
+   * @param {Array} destination - [lat, lng]
+   */
+  async _calculateRouteOSRM(origin, destination) {
+    try {
+      // OSRM espera coordenadas em [Lng,Lat] na URL
+      const url = `https://router.project-osrm.org/route/v1/driving/${origin[1]},${origin[0]};${destination[1]},${destination[0]}?overview=full&geometries=geojson&steps=false`;
+      const response = await fetch(url);
+      if (!response.ok) throw new Error(`OSRM Error: ${response.statusText}`);
 
       const data = await response.json();
-      
-      if (data.Routes && data.Routes.length > 0) {
-        const route = data.Routes[0];
-        let geometry = [];
-        
-        // Se a AWS retornou a geometria da perna, converta de [Lng, Lat] para [Lat, Lng]
-        if (route.Legs && route.Legs.length > 0 && route.Legs[0].Geometry && route.Legs[0].Geometry.LineString) {
-           geometry = route.Legs[0].Geometry.LineString.map(coord => [coord[1], coord[0]]);
-        }
-        
-        // A API v2 retorna a distância em metros por padrão na maioria dos casos.
-        let dist = route.Summary.Distance;
-        if (dist > 5000) {
-          dist = dist / 1000;
-        }
+      if (data.routes && data.routes.length > 0) {
+        const route = data.routes[0];
+        const distanceKm = (route.distance || 0) / 1000;
+        const durationSeconds = route.duration || 0;
 
-        return {
-          distanceKm: dist,
-          durationSeconds: route.Summary.Duration,
-          geometry: geometry
-        };
+        // GeoJSON LineString: coordenadas já em [Lng, Lat] → converte para [Lat, Lng]
+        const geometry = (route.geometry && route.geometry.coordinates)
+          ? route.geometry.coordinates.map(coord => [coord[1], coord[0]])
+          : [];
+
+        console.log(`[OSRM] ${distanceKm.toFixed(1)} km | ${(durationSeconds/3600).toFixed(1)} h | ${geometry.length} pontos`);
+        return { distanceKm, durationSeconds, geometry };
       }
-      return null;
-    } catch (error) {
-      console.error('Falha na roteirização AWS:', error);
-      return null;
+    } catch (err) {
+      console.error('[OSRM] Falha no fallback de roteirização:', err);
     }
+    return null;
+  },
+
+  /**
+   * Busca apenas a geometria da rota via OSRM (usado quando AWS retorna distância mas sem polyline).
+   */
+  async _fetchOSRMGeometry(origin, destination) {
+    try {
+      const url = `https://router.project-osrm.org/route/v1/driving/${origin[1]},${origin[0]};${destination[1]},${destination[0]}?overview=full&geometries=geojson&steps=false`;
+      const response = await fetch(url);
+      if (!response.ok) return [];
+      const data = await response.json();
+      if (data.routes && data.routes[0] && data.routes[0].geometry) {
+        return data.routes[0].geometry.coordinates.map(coord => [coord[1], coord[0]]);
+      }
+    } catch (err) {
+      console.warn('[OSRM Geometry] Falha:', err);
+    }
+    return [];
   }
 };

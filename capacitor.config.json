@@ -3,7 +3,13 @@
   "appName": "GENERAL",
   "webDir": "www",
   "server": {
-    "androidScheme": "https"
+    "androidScheme": "https",
+    "allowNavigation": [
+      "*.api.aws",
+      "router.project-osrm.org",
+      "nominatim.openstreetmap.org",
+      "brasilapi.com.br"
+    ]
   },
   "plugins": {
     "SplashScreen": {
@@ -19,3 +25,4 @@
     }
   }
 }
+
