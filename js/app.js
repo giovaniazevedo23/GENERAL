@@ -230,6 +230,22 @@ const App = {
       if(task.action === 'ACIONAR') icon = 'shield-alert';
       if(task.action === 'EMAIL') icon = 'mail';
 
+      
+      let contactActionBtn = '';
+      if (task.contact) {
+          if (task.action === 'LIGAR') {
+              let phone = task.contact.replace(/\D/g,'');
+              contactActionBtn = `<a href="tel:${phone}" class="mt-2 w-full py-1.5 bg-blue-600 hover:bg-blue-500 rounded-lg text-[11px] text-white font-bold text-center block transition-all"><i data-lucide="phone-call" class="w-3 h-3 inline mr-1"></i> Ligar Agora</a>`;
+          } else if (task.action === 'NOTIFICAR') {
+              if (task.modality === 'EMAIL') {
+                  contactActionBtn = `<a href="mailto:${task.contact}" class="mt-2 w-full py-1.5 bg-amber-600 hover:bg-amber-500 rounded-lg text-[11px] text-white font-bold text-center block transition-all"><i data-lucide="mail" class="w-3 h-3 inline mr-1"></i> Enviar E-mail</a>`;
+              } else {
+                  let phone = task.contact.replace(/\D/g,'');
+                  contactActionBtn = `<a href="https://wa.me/55${phone}" target="_blank" class="mt-2 w-full py-1.5 bg-emerald-600 hover:bg-emerald-500 rounded-lg text-[11px] text-white font-bold text-center block transition-all"><i data-lucide="message-circle" class="w-3 h-3 inline mr-1"></i> Enviar WhatsApp</a>`;
+              }
+          }
+      }
+
       const card = document.createElement('div');
       card.className = `p-4 rounded-2xl border ${isDone ? 'bg-slate-900/40 border-emerald-500/30' : 'bg-slate-900/60 border-slate-700'} flex flex-col gap-3 transition-all relative group`;
       card.innerHTML = `
@@ -345,9 +361,9 @@ const App = {
 
     if (!appState.goldenHourTasks) appState.goldenHourTasks = [];
     appState.goldenHourTasks.push({
-      id: 't_' + Date.now(),
-      action, target, details, completed: false
-    });
+        id: 't_' + Date.now(),
+        action, target, details, contact, modality, completed: false
+      });
 
     this.renderGoldenHourCards();
     this.closeNewCommunicationModal();
@@ -2759,6 +2775,7 @@ ${NotificationHub.getTemplate('AVISO_CLIENTE_SINISTRO_ATRASO', inc)}
       historyContainer.innerHTML = completedIncidents.map(inc => this.buildSidebarCard(inc)).join('') ||
         '<p class="text-[10px] text-slate-500 text-center py-2">Nenhum histórico.</p>';
     }
+    if (typeof lucide !== 'undefined') lucide.createIcons();
   },
 
   buildSidebarCard(inc) {
@@ -3346,7 +3363,7 @@ ${NotificationHub.getTemplate('WHATSAPP_EMERGENCIA', inc)}
          appState.save();
          
          this.closeNewIncidentModal();
-         this.renderSidebar();
+         this.renderIncidentsList();
          this.renderSavedPlansTab();
          this.switchTab('dashboard');
          if (appState.currentIncidentId === editId) this.renderCurrentIncident();
@@ -3394,7 +3411,7 @@ ${NotificationHub.getTemplate('WHATSAPP_EMERGENCIA', inc)}
     appState.save(); // Salvar as alterações (incluindo lat/lng e logisticsPlan)
 
     this.closeNewIncidentModal();
-    this.renderSidebar();
+    this.renderIncidentsList();
     this.renderSavedPlansTab();
     this.switchTab('dashboard');
     
