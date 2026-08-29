@@ -144,21 +144,48 @@ class GeneralMapController {
     this.map.panTo([lat, lng]);
   }
 
-  drawRoute(coordinates) {
-    if (!this.map || typeof L === 'undefined' || !coordinates || coordinates.length === 0) return;
+  drawRoutes(routesArray) {
+    if (!this.map || typeof L === 'undefined' || !routesArray || routesArray.length === 0) return;
 
     this.clearRoute();
+    this.routePolylines = [];
+    
+    // As rotas devem ser desenhadas da última para a primeira (z-index)
+    // para que a rota principal (isMain = true, index 0) fique por cima
+    const reversedRoutes = [...routesArray].reverse();
 
-    this.routePolyline = L.polyline(coordinates, {
-      color: '#3b82f6',
-      weight: 5,
-      opacity: 0.8,
-      dashArray: '10, 10',
-      lineJoin: 'round'
-    }).addTo(this.map);
+    reversedRoutes.forEach(route => {
+      if (!route.geometry || route.geometry.length === 0) return;
+      
+      const isMain = route.isMain;
+      const polyline = L.polyline(route.geometry, {
+        color: isMain ? '#3b82f6' : '#94a3b8',
+        weight: isMain ? 6 : 5,
+        opacity: isMain ? 0.9 : 0.6,
+        dashArray: isMain ? '' : '10, 10',
+        lineJoin: 'round',
+        interactive: true
+      }).addTo(this.map);
 
-    const originCoords = coordinates[0];
-    const destCoords = coordinates[coordinates.length - 1];
+      // Evento de clique para selecionar rota alternativa no mapa
+      polyline.on('click', () => {
+        window.dispatchEvent(new CustomEvent('routeSelected', { detail: { routeId: route.id } }));
+      });
+      
+      // Hover effect
+      polyline.on('mouseover', function () {
+        if (!isMain) this.setStyle({ color: '#64748b', weight: 6, opacity: 0.8 });
+      });
+      polyline.on('mouseout', function () {
+        if (!isMain) this.setStyle({ color: '#94a3b8', weight: 5, opacity: 0.6 });
+      });
+
+      this.routePolylines.push(polyline);
+    });
+
+    const mainRoute = routesArray.find(r => r.isMain) || routesArray[0];
+    const originCoords = mainRoute.geometry[0];
+    const destCoords = mainRoute.geometry[mainRoute.geometry.length - 1];
 
     const originIcon = L.divIcon({
       className: 'custom-origin-pin',
@@ -186,16 +213,20 @@ class GeneralMapController {
       iconAnchor: [16, 32]
     });
 
-    this.originMarker = L.marker(originCoords, { icon: originIcon }).addTo(this.map);
-    this.destMarker = L.marker(destCoords, { icon: destIcon }).addTo(this.map);
+    this.originMarker = L.marker(originCoords, { icon: originIcon, zIndexOffset: 1000 }).addTo(this.map);
+    this.destMarker = L.marker(destCoords, { icon: destIcon, zIndexOffset: 1000 }).addTo(this.map);
 
-    this.map.fitBounds(this.routePolyline.getBounds(), { padding: [50, 50] });
+    // Ajusta o mapa para mostrar todas as rotas
+    if (this.routePolylines.length > 0) {
+      const group = new L.featureGroup(this.routePolylines);
+      this.map.fitBounds(group.getBounds(), { padding: [50, 50] });
+    }
   }
 
   clearRoute() {
-    if (this.routePolyline && this.map) {
-      this.map.removeLayer(this.routePolyline);
-      this.routePolyline = null;
+    if (this.routePolylines && this.map) {
+      this.routePolylines.forEach(p => this.map.removeLayer(p));
+      this.routePolylines = [];
     }
     if (this.originMarker && this.map) {
       this.map.removeLayer(this.originMarker);

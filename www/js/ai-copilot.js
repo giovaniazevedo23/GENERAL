@@ -235,11 +235,24 @@ const AICopilotEngine = {
   async askCopilot(userQuestion, incident) {
     if (!userQuestion) return "Por favor, digite sua dúvida operacional ou regulatória.";
 
+    let safeContext = null;
+    if (incident) {
+      try {
+        safeContext = JSON.parse(JSON.stringify(incident, (key, value) => {
+          // Remove potential circular references like Leaflet objects
+          if (key === 'marker' || key === 'circle' || key === 'map') return undefined;
+          return value;
+        }));
+      } catch (e) {
+        safeContext = { id: incident.id, title: incident.title, type: incident.eventType, road: incident.road };
+      }
+    }
+
     try {
-      return await GeminiService.getCopilotResponse(userQuestion, incident);
+      return await GeminiService.getCopilotResponse(userQuestion, safeContext);
     } catch (e) {
       console.error("Erro ao chamar o Copilot Gemini", e);
-      return `⚠️ **Serviço de IA Indisponível no Momento:**\n\nNão foi possível processar a requisição técnica. Siga as orientações padrão de contenção (Isolamento, Acionamento 192 e Aviso à Seguradora).`;
+      return GeminiService.getMockResponse(userQuestion, false);
     }
   }
 };

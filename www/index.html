@@ -198,6 +198,10 @@
             <i data-lucide="file-check-2" class="w-4 h-4 text-cyan-400"></i>
             Plano Logístico & IA
           </button>
+          <button data-tab="monitoring" onclick="App.switchTab('monitoring')" class="nav-button w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-bold text-slate-400 hover:bg-slate-800 hover:text-slate-200 transition-all">
+            <i data-lucide="activity" class="w-4 h-4 text-emerald-400"></i>
+            Monitoramento Tático
+          </button>
           <button data-tab="saved-plans" onclick="App.switchTab('saved-plans')" class="nav-button w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-bold text-slate-400 hover:bg-slate-800 hover:text-slate-200 transition-all">
             <i data-lucide="saveAll" class="w-4 h-4 text-emerald-400"></i>
             Planos Salvos
@@ -210,10 +214,7 @@
             <i data-lucide="brain-circuit" class="w-4 h-4 text-indigo-400"></i>
             Plano 5W2H Prescritivo
           </button>
-          <button data-tab="copilot" onclick="App.switchTab('copilot')" class="nav-button w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-bold text-slate-400 hover:bg-slate-800 hover:text-slate-200 transition-all">
-            <i data-lucide="bot" class="w-4 h-4"></i>
-            Copilot Tático 24h
-          </button>
+          
         </nav>
       </div>
 
@@ -224,6 +225,10 @@
           <button data-tab="dashboard" onclick="App.switchTab('dashboard')" class="nav-button w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-bold transition-all bg-blue-600 text-white shadow-md">
             <i data-lucide="layout-dashboard" class="w-4 h-4"></i>
             Dashboard & Mapa
+          </button>
+          <button data-tab="indicators" onclick="App.switchTab('indicators')" class="nav-button w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-bold text-slate-400 hover:bg-slate-800 hover:text-slate-200 transition-all">
+            <i data-lucide="bar-chart-2" class="w-4 h-4 text-indigo-400"></i>
+            Indicadores e KPIs
           </button>
           <button data-tab="wizard" onclick="App.switchTab('wizard')" class="nav-button w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-bold text-slate-400 hover:bg-slate-800 hover:text-slate-200 transition-all">
             <i data-lucide="shield-alert" class="w-4 h-4"></i>
@@ -245,6 +250,16 @@
             <i data-lucide="file-text" class="w-4 h-4"></i>
             Dossiê PDF Oficial
           </button>
+          
+          <button data-tab="cargo-catalog" onclick="App.switchTab('cargo-catalog')" class="nav-button w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-bold text-slate-400 hover:bg-slate-800 hover:text-slate-200 transition-all">
+            <i data-lucide="package" class="w-4 h-4 text-amber-400"></i>
+            Catálogo de Cargas
+          </button>
+<button data-tab="reverse-logistics" onclick="App.switchTab('reverse-logistics')" class="nav-button w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-bold text-slate-400 hover:bg-slate-800 hover:text-slate-200 transition-all">
+            <i data-lucide="recycle" class="w-4 h-4 text-emerald-400"></i>
+            Logística Reversa
+          </button>
+
           <button data-tab="docs" onclick="App.switchTab('docs')" class="nav-button w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-bold text-slate-400 hover:bg-slate-800 hover:text-slate-200 transition-all">
             <i data-lucide="folder-open" class="w-4 h-4"></i>
             Documentação & Laudos
@@ -339,7 +354,67 @@
       <!-- ============================================== -->
       <!-- VIEW: PLANO LOGÍSTICO & AUDITORIA DE IA (PRE-TRIP) -->
       <!-- ============================================== -->
-      <div id="view-planner" class="tab-view hidden space-y-6">
+      
+      <!-- VIEW: MONITORAMENTO -->
+      <div id="view-monitoring" class="tab-view hidden space-y-6">
+        <!-- Monitoramento Tático do Plano (Stepper) -->
+        <div class="bg-slate-900 border border-slate-800 p-6 rounded-2xl mb-6">
+          <div class="flex items-center justify-between mb-6">
+            <div>
+              <h3 class="text-white font-bold text-lg">Monitoramento Tático do Plano</h3>
+              <p class="text-xs text-slate-400">Acompanhamento em tempo real da execução e auditoria de atividades.</p>
+            </div>
+            <button onclick="App.advancePlanStatus()" class="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-lg text-xs font-bold shadow-lg shadow-emerald-900/20 transition-all flex items-center gap-2">
+              Avançar Etapa <i data-lucide="arrow-right" class="w-4 h-4"></i>
+            </button>
+          </div>
+          
+          <div class="relative flex justify-between items-center w-full max-w-4xl mx-auto mb-8">
+            <div class="absolute left-0 top-1/2 transform -translate-y-1/2 w-full h-1 bg-slate-800 -z-10 rounded-full"></div>
+            <div id="stepper-progress-bar" class="absolute left-0 top-1/2 transform -translate-y-1/2 h-1 bg-emerald-500 -z-10 transition-all duration-500 rounded-full" style="width: 0%;"></div>
+            
+            <!-- Steps -->
+            <div class="flex flex-col items-center gap-2 stepper-item" data-step="1">
+              <div class="w-10 h-10 rounded-full bg-slate-800 text-slate-400 flex items-center justify-center border-4 border-slate-900 transition-colors" id="step-icon-1">
+                <i data-lucide="file-edit" class="w-4 h-4"></i>
+              </div>
+              <span class="text-[10px] font-bold text-slate-500 uppercase tracking-wide" id="step-text-1">Elaboração</span>
+            </div>
+            <div class="flex flex-col items-center gap-2 stepper-item" data-step="2">
+              <div class="w-10 h-10 rounded-full bg-slate-800 text-slate-400 flex items-center justify-center border-4 border-slate-900 transition-colors" id="step-icon-2">
+                <i data-lucide="check-circle" class="w-4 h-4"></i>
+              </div>
+              <span class="text-[10px] font-bold text-slate-500 uppercase tracking-wide" id="step-text-2">Aprovado</span>
+            </div>
+            <div class="flex flex-col items-center gap-2 stepper-item" data-step="3">
+              <div class="w-10 h-10 rounded-full bg-slate-800 text-slate-400 flex items-center justify-center border-4 border-slate-900 transition-colors" id="step-icon-3">
+                <i data-lucide="play-circle" class="w-4 h-4"></i>
+              </div>
+              <span class="text-[10px] font-bold text-slate-500 uppercase tracking-wide" id="step-text-3">Em Execução</span>
+            </div>
+            <div class="flex flex-col items-center gap-2 stepper-item" data-step="4">
+              <div class="w-10 h-10 rounded-full bg-slate-800 text-slate-400 flex items-center justify-center border-4 border-slate-900 transition-colors" id="step-icon-4">
+                <i data-lucide="truck" class="w-4 h-4"></i>
+              </div>
+              <span class="text-[10px] font-bold text-slate-500 uppercase tracking-wide" id="step-text-4">A Caminho</span>
+            </div>
+            <div class="flex flex-col items-center gap-2 stepper-item" data-step="5">
+              <div class="w-10 h-10 rounded-full bg-slate-800 text-slate-400 flex items-center justify-center border-4 border-slate-900 transition-colors" id="step-icon-5">
+                <i data-lucide="star" class="w-4 h-4"></i>
+              </div>
+              <span class="text-[10px] font-bold text-slate-500 uppercase tracking-wide" id="step-text-5">A Avaliar</span>
+            </div>
+          </div>
+
+          <div class="bg-slate-950 rounded-xl p-4 border border-slate-800/50">
+            <h4 class="text-xs font-bold text-slate-300 uppercase tracking-wide mb-3 flex items-center gap-2"><i data-lucide="activity" class="w-3.5 h-3.5 text-blue-400"></i> Log de Atividades</h4>
+            <div id="plan-activity-log" class="space-y-3 max-h-[150px] overflow-y-auto pr-2 custom-scrollbar">
+               <div class="text-[10px] text-slate-500 text-center italic">Nenhuma atividade registrada ainda.</div>
+            </div>
+          </div>
+        </div>
+      </div>
+<div id="view-planner" class="tab-view hidden space-y-6">
         
         <!-- Header do Planejador -->
         <div class="bg-gradient-to-r from-cyan-950 via-slate-900 to-blue-950 border border-cyan-800/40 p-6 rounded-2xl flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
@@ -371,7 +446,7 @@
           </div>
         </div>
 
-
+        
         <!-- Layout 2 Colunas: Formulário do Plano vs. Parecer da IA -->
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
           
@@ -595,9 +670,13 @@
                     <option value="">Selecione a Cidade</option>
                   </select>
                 </div>
-                <div class="sm:col-span-2">
+                <div class="sm:col-span-1">
                   <label class="block text-slate-400 font-semibold mb-1">CEP (Origem):</label>
                   <input id="plan-origin-ref" type="text" placeholder="Ex: 00000-000" class="w-full bg-slate-950 border border-slate-800 rounded-lg p-2 text-white focus:border-blue-500 outline-none transition-all" />
+                </div>
+                <div class="sm:col-span-1">
+                  <label class="block text-slate-400 font-semibold mb-1">Bairro / Rua (Origem):</label>
+                  <input id="plan-origin-neighborhood" type="text" placeholder="Ex: Zona Sul" class="w-full bg-slate-950 border border-slate-800 rounded-lg p-2 text-white focus:border-blue-500 outline-none transition-all" />
                 </div>
 
                 <div class="sm:col-span-2"><hr class="border-slate-800"></div>
@@ -614,9 +693,13 @@
                     <option value="">Selecione a Cidade</option>
                   </select>
                 </div>
-                <div class="sm:col-span-2">
+                <div class="sm:col-span-1">
                   <label class="block text-slate-400 font-semibold mb-1">CEP (Destino):</label>
                   <input id="plan-dest-ref" type="text" placeholder="Ex: 00000-000" class="w-full bg-slate-950 border border-slate-800 rounded-lg p-2 text-white focus:border-blue-500 outline-none transition-all" />
+                </div>
+                <div class="sm:col-span-1">
+                  <label class="block text-slate-400 font-semibold mb-1">Bairro / Rua (Destino):</label>
+                  <input id="plan-dest-neighborhood" type="text" placeholder="Ex: Centro" class="w-full bg-slate-950 border border-slate-800 rounded-lg p-2 text-white focus:border-blue-500 outline-none transition-all" />
                 </div>
                 
                 <div class="sm:col-span-2"><hr class="border-slate-800"></div>
@@ -638,7 +721,7 @@
                 </div>
               </div>
               <div class="mt-2" id="plan-time-container">
-                <label class="block text-slate-400 font-semibold mb-1">Previsão de Viagem (AWS):</label>
+                <label class="block text-slate-400 font-semibold mb-1">Previsão de Viagem (Google API):</label>
                 <div class="flex gap-2">
                   <input id="plan-duration" type="text" placeholder="Ex: 2 dias, 5 horas" class="flex-1 bg-slate-950 border border-slate-800 rounded-lg p-2 text-white text-sm focus:outline-none focus:border-blue-500" />
                   <button type="button" onclick="App.runAWS_AIRouting()" class="bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-2 px-4 rounded-lg transition-all text-xs flex items-center justify-center gap-2 whitespace-nowrap">
@@ -651,7 +734,7 @@
               </div>
               <div id="planner-map-container" class="mt-4 hidden flex-col">
                 <div class="flex flex-col sm:flex-row sm:items-center justify-between mb-2 gap-2">
-                  <label class="block text-slate-400 font-semibold">Traçado da Rota (AWS Location Service):</label>
+                  <label class="block text-slate-400 font-semibold">Traçado da Rota (Google Maps API):</label>
                   <button type="button" onclick="App.viewRouteEvaluationsHistory()" class="bg-indigo-600/20 hover:bg-indigo-600/30 text-indigo-400 text-[10px] font-bold py-1.5 px-3 rounded-lg transition-all border border-indigo-500/30 flex items-center justify-center gap-1">
                     <i data-lucide="history" class="w-3 h-3"></i> Histórico da Rodovia
                   </button>
@@ -1221,7 +1304,269 @@
       <!-- ============================================== -->
       <!-- VIEW: DASHBOARD & MAPA -->
       <!-- ============================================== -->
-      <div id="view-dashboard" class="tab-view space-y-6">
+      
+      <!-- VIEW: INDICADORES E KPIS -->
+      <div id="view-indicators" class="tab-view hidden space-y-6">
+        
+        <div class="flex items-center justify-between mb-4">
+          <div>
+            <h2 class="text-xl font-black text-white flex items-center gap-2">
+              <i data-lucide="bar-chart-2" class="w-6 h-6 text-indigo-400"></i>
+              Indicadores & Desempenho (KPIs)
+            </h2>
+            <p class="text-xs text-slate-400 mt-1">Estatísticas globais normalizadas de planos logísticos e ocorrências.</p>
+          </div>
+          <button onclick="if(window.App) App.renderIndicatorsTab()" class="bg-slate-800 hover:bg-slate-700 text-slate-300 px-3 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-2 border border-slate-700">
+            <i data-lucide="refresh-cw" class="w-4 h-4"></i> Atualizar Dados
+          </button>
+        </div>
+
+        <!-- KPI Grid -->
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <!-- Total Ocorrências -->
+          <div class="bg-slate-900 border border-slate-800 p-5 rounded-2xl flex flex-col justify-between">
+            <div class="flex items-center gap-2 mb-2">
+              <div class="w-8 h-8 rounded-full bg-blue-500/10 flex items-center justify-center">
+                <i data-lucide="alert-triangle" class="w-4 h-4 text-blue-400"></i>
+              </div>
+              <span class="text-xs font-bold text-slate-400 uppercase tracking-wide">Ocorrências</span>
+            </div>
+            <div class="flex items-end gap-2">
+              <span id="kpi-total-incidents" class="text-3xl font-black text-white">0</span>
+              <span class="text-[10px] text-slate-500 mb-1">Registradas</span>
+            </div>
+          </div>
+
+          <!-- Frequência (Incidentes / Planos) -->
+          <div class="bg-slate-900 border border-slate-800 p-5 rounded-2xl flex flex-col justify-between">
+            <div class="flex items-center gap-2 mb-2">
+              <div class="w-8 h-8 rounded-full bg-purple-500/10 flex items-center justify-center">
+                <i data-lucide="activity" class="w-4 h-4 text-purple-400"></i>
+              </div>
+              <span class="text-xs font-bold text-slate-400 uppercase tracking-wide">Frequência</span>
+            </div>
+            <div class="flex items-end gap-2">
+              <span id="kpi-freq-incidents" class="text-3xl font-black text-white">0%</span>
+              <span class="text-[10px] text-slate-500 mb-1">Taxa de Acidente</span>
+            </div>
+          </div>
+
+          <!-- Custo Total Estimado -->
+          <div class="bg-slate-900 border border-slate-800 p-5 rounded-2xl flex flex-col justify-between">
+            <div class="flex items-center gap-2 mb-2">
+              <div class="w-8 h-8 rounded-full bg-rose-500/10 flex items-center justify-center">
+                <i data-lucide="dollar-sign" class="w-4 h-4 text-rose-400"></i>
+              </div>
+              <span class="text-xs font-bold text-slate-400 uppercase tracking-wide">Custo Est.</span>
+            </div>
+            <div class="flex items-end gap-1">
+              <span class="text-lg font-bold text-slate-500 mb-1">R$</span>
+              <span id="kpi-total-cost" class="text-2xl font-black text-rose-400">0</span>
+            </div>
+          </div>
+
+          <!-- Entregas Afetadas -->
+          <div class="bg-slate-900 border border-slate-800 p-5 rounded-2xl flex flex-col justify-between">
+            <div class="flex items-center gap-2 mb-2">
+              <div class="w-8 h-8 rounded-full bg-amber-500/10 flex items-center justify-center">
+                <i data-lucide="truck" class="w-4 h-4 text-amber-400"></i>
+              </div>
+              <span class="text-xs font-bold text-slate-400 uppercase tracking-wide">Afetadas</span>
+            </div>
+            <div class="flex items-end gap-2">
+              <span id="kpi-affected-deliveries" class="text-3xl font-black text-amber-400">0%</span>
+              <span class="text-[10px] text-slate-500 mb-1">Cargas</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Gráficos de Barra Customizados (CSS) -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+          
+          <!-- Gravidade dos Acidentes -->
+          <div class="bg-slate-900/50 border border-slate-800 p-6 rounded-2xl">
+            <h3 class="text-sm font-bold text-white mb-4 flex items-center gap-2">
+              <i data-lucide="pie-chart" class="w-4 h-4 text-slate-400"></i> Nível de Gravidade
+            </h3>
+            <div class="space-y-4">
+              
+              <div>
+                <div class="flex justify-between text-xs mb-1">
+                  <span class="font-semibold text-slate-300">Crítico / Fatalidade</span>
+                  <span id="val-grav-critical" class="text-slate-400 font-bold">0%</span>
+                </div>
+                <div class="w-full bg-slate-950 rounded-full h-2">
+                  <div id="bar-grav-critical" class="bg-rose-500 h-2 rounded-full transition-all duration-1000" style="width: 0%"></div>
+                </div>
+              </div>
+
+              <div>
+                <div class="flex justify-between text-xs mb-1">
+                  <span class="font-semibold text-slate-300">Alto Risco</span>
+                  <span id="val-grav-high" class="text-slate-400 font-bold">0%</span>
+                </div>
+                <div class="w-full bg-slate-950 rounded-full h-2">
+                  <div id="bar-grav-high" class="bg-amber-500 h-2 rounded-full transition-all duration-1000" style="width: 0%"></div>
+                </div>
+              </div>
+
+              <div>
+                <div class="flex justify-between text-xs mb-1">
+                  <span class="font-semibold text-slate-300">Médio / Leve</span>
+                  <span id="val-grav-medium" class="text-slate-400 font-bold">0%</span>
+                </div>
+                <div class="w-full bg-slate-950 rounded-full h-2">
+                  <div id="bar-grav-medium" class="bg-blue-400 h-2 rounded-full transition-all duration-1000" style="width: 0%"></div>
+                </div>
+              </div>
+
+            </div>
+          </div>
+
+          <!-- Danos à Mercadoria -->
+          <div class="bg-slate-900/50 border border-slate-800 p-6 rounded-2xl">
+            <h3 class="text-sm font-bold text-white mb-4 flex items-center gap-2">
+              <i data-lucide="package-minus" class="w-4 h-4 text-slate-400"></i> Danos à Mercadoria
+            </h3>
+            <div class="space-y-4">
+              
+              <div>
+                <div class="flex justify-between text-xs mb-1">
+                  <span class="font-semibold text-slate-300">Perda Total</span>
+                  <span id="val-dmg-total" class="text-slate-400 font-bold">0%</span>
+                </div>
+                <div class="w-full bg-slate-950 rounded-full h-2">
+                  <div id="bar-dmg-total" class="bg-red-500 h-2 rounded-full transition-all duration-1000" style="width: 0%"></div>
+                </div>
+              </div>
+
+              <div>
+                <div class="flex justify-between text-xs mb-1">
+                  <span class="font-semibold text-slate-300">Avaria Parcial</span>
+                  <span id="val-dmg-partial" class="text-slate-400 font-bold">0%</span>
+                </div>
+                <div class="w-full bg-slate-950 rounded-full h-2">
+                  <div id="bar-dmg-partial" class="bg-orange-400 h-2 rounded-full transition-all duration-1000" style="width: 0%"></div>
+                </div>
+              </div>
+
+              <div>
+                <div class="flex justify-between text-xs mb-1">
+                  <span class="font-semibold text-slate-300">Sem Danos</span>
+                  <span id="val-dmg-none" class="text-slate-400 font-bold">0%</span>
+                </div>
+                <div class="w-full bg-slate-950 rounded-full h-2">
+                  <div id="bar-dmg-none" class="bg-emerald-400 h-2 rounded-full transition-all duration-1000" style="width: 0%"></div>
+                </div>
+              </div>
+
+            </div>
+          </div>
+
+        </div>
+
+        <!-- Log Temporal -->
+        <div class="bg-slate-900 border border-slate-800 p-6 rounded-2xl">
+           <h3 class="text-sm font-bold text-white mb-4 flex items-center gap-2">
+             <i data-lucide="clock" class="w-4 h-4 text-slate-400"></i> Tempo de Paralisação (Horas Paradas)
+           </h3>
+           <div class="flex items-center gap-6">
+             <div class="flex-1">
+               <p class="text-xs text-slate-400 mb-2">Acúmulo de horas de inatividade decorrente das ocorrências não resolvidas.</p>
+               <div class="h-4 w-full bg-slate-950 rounded-full overflow-hidden">
+                 <div class="h-full bg-gradient-to-r from-blue-600 to-cyan-400 w-1/3 progress-stripes"></div>
+               </div>
+             </div>
+             <div class="text-right shrink-0">
+               <span id="kpi-downtime" class="text-2xl font-black text-cyan-400">0h</span>
+             </div>
+           </div>
+        </div>
+
+      </div>
+
+
+      <!-- ============================================== -->
+      <!-- VIEW: LOGÍSTICA REVERSA E REAPROVEITAMENTO -->
+      <!-- ============================================== -->
+      
+      <!-- ============================================== -->
+      <!-- VIEW: CATÁLOGO DE CARGAS E RISCOS -->
+      <!-- ============================================== -->
+      <div id="view-cargo-catalog" class="tab-view hidden space-y-6">
+        <div class="bg-gradient-to-r from-amber-950 via-slate-900 to-yellow-950 border border-amber-800/40 p-6 rounded-2xl flex items-center justify-between">
+          <div>
+            <h2 class="text-xl font-black text-white flex items-center gap-2">
+              <i data-lucide="package" class="w-6 h-6 text-amber-400"></i>
+              Catálogo de Cargas
+            </h2>
+            <p class="text-xs text-slate-400 mt-1">
+              Gerencie os tipos de cargas e suas notas de risco inerentes para as simulações de viagem.
+            </p>
+          </div>
+          <button onclick="App.openAddCargoModal()" class="bg-amber-600 hover:bg-amber-500 text-white font-bold py-2 px-4 rounded-xl transition-all shadow-lg flex items-center gap-2 text-xs">
+            <i data-lucide="plus" class="w-4 h-4"></i> Nova Carga
+          </button>
+        </div>
+
+        <div class="grid grid-cols-1 gap-4" id="cargo-catalog-list">
+          <!-- Populated by JS -->
+        </div>
+      </div>
+
+<div id="view-reverse-logistics" class="tab-view hidden space-y-6">
+        <div class="bg-gradient-to-r from-emerald-950 via-slate-900 to-green-950 border border-emerald-800/40 p-6 rounded-2xl">
+          <h2 class="text-xl font-black text-white flex items-center gap-2">
+            <i data-lucide="recycle" class="w-6 h-6 text-emerald-400"></i>
+            Logística Reversa & Reaproveitamento
+          </h2>
+          <p class="text-xs text-slate-400 mt-1">
+            Processo de avaliação e destinação de mercadorias com perda parcial ou desistência do cliente para reciclagem e recondicionamento.
+          </p>
+        </div>
+
+        <div class="bg-slate-900/60 border border-slate-800 p-5 rounded-2xl">
+          <label class="block text-xs font-bold text-slate-300 mb-2">Selecione a Ocorrência (Necessário para avaliação):</label>
+          <select id="reverse-incident-select" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-sm text-slate-200 focus:border-emerald-500 outline-none transition-all" onchange="App.handleReverseIncidentSelect()">
+            <option value="">Selecione uma ocorrência ativa...</option>
+          </select>
+        </div>
+
+        <div id="reverse-logistics-form" class="bg-slate-900/60 border border-slate-800 p-6 rounded-2xl hidden">
+          <h3 class="text-sm font-bold text-white mb-4 flex items-center gap-2">
+            <i data-lucide="clipboard-list" class="w-4 h-4 text-emerald-400"></i>
+            Avaliação de Estado e Destinação
+          </h3>
+          
+          <div class="space-y-4">
+            <div>
+              <label class="block text-xs font-bold text-slate-400 mb-1">Situação dos Produtos Rejeitados</label>
+              <select id="reverse-status" class="w-full bg-slate-950 border border-slate-800 rounded-lg p-2 text-xs text-white">
+                <option value="REAPROVEITADO">Aprovado para Reaproveitamento</option>
+                <option value="CONSERTO">Produto para Conserto / Recondicionamento</option>
+                <option value="SUCATA">Descarte / Sucata</option>
+              </select>
+            </div>
+            
+            <div>
+              <label class="block text-xs font-bold text-slate-400 mb-1">Empresa Parceira Responsável</label>
+              <select id="reverse-company" class="w-full bg-slate-950 border border-slate-800 rounded-lg p-2 text-xs text-white">
+                <option value="EcoLogística SA">EcoLogística SA</option>
+                <option value="RecondicionaTudo">RecondicionaTudo LTDA</option>
+                <option value="CicloVerde Reciclagem">CicloVerde Reciclagem Ambiental</option>
+                <option value="DevolveRápido Log">DevolveRápido Logística Reversa</option>
+              </select>
+            </div>
+            
+            <button onclick="App.submitReverseLogistics()" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-xl py-3 text-sm transition-all shadow-lg flex items-center justify-center gap-2">
+              <i data-lucide="check-circle" class="w-4 h-4"></i>
+              Processar Logística Reversa
+            </button>
+          </div>
+        </div>
+      </div>
+
+<div id="view-dashboard" class="tab-view space-y-6">
         
         <div class="relative w-full" id="global-search-container">
           <i data-lucide="search" class="w-4 h-4 text-slate-500 absolute left-3 top-3.5"></i>
@@ -1253,7 +1598,7 @@
                 <i data-lucide="map-pin" class="w-4 h-4 text-rose-500"></i>
                 <span class="text-xs font-bold text-white">Georreferenciamento & Raio de Isolamento Tático</span>
               </div>
-              <span class="text-[11px] text-slate-400">Auditoria Visual interativa via AWS</span>
+              <span class="text-[11px] text-slate-400">Auditoria Visual interativa via Google</span>
             </div>
             <div id="incident-map" class="flex-1 w-full h-full z-10"></div>
           </div>
@@ -1727,6 +2072,15 @@
       <!-- VIEW: CAUSA RAIZ (ISHIKAWA & 5 PORQUÊS) -->
       <!-- ============================================== -->
       <div id="view-investigation" class="tab-view hidden space-y-6">
+
+        <!-- Seleção de Ocorrência -->
+        <div class="bg-slate-900/60 border border-slate-800 p-5 rounded-2xl">
+          <label class="block text-xs font-bold text-slate-300 mb-2">Selecione a Ocorrência (Necessário para avaliação):</label>
+          <select id="ishikawa-incident-select" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-sm text-slate-200 focus:border-purple-500 outline-none transition-all" onchange="App.handleIshikawaIncidentSelect()">
+            <option value="">Selecione uma ocorrência ativa...</option>
+          </select>
+        </div>
+
         <div class="bg-slate-900/60 border border-slate-800 p-6 rounded-2xl">
           <h2 class="text-lg font-black text-white flex items-center gap-2">
             <i data-lucide="git-merge" class="w-5 h-5 text-purple-400"></i>
@@ -1781,7 +2135,7 @@
           <div id="five-whys-interactive-container"></div>
           
           <div class="flex justify-end mt-4 border-t border-slate-800/80 pt-4">
-            <button onclick="App.showToast('Investigação de Causa Raiz salva com sucesso!', 'success')" class="bg-purple-600 hover:bg-purple-500 text-white font-bold px-6 py-2.5 rounded-xl shadow-lg shadow-purple-900/30 transition-all flex items-center gap-2 text-xs">
+            <button onclick="App.saveIshikawa()" class="bg-purple-600 hover:bg-purple-500 text-white font-bold px-6 py-2.5 rounded-xl shadow-lg shadow-purple-900/30 transition-all flex items-center gap-2 text-xs">
               <i data-lucide="save" class="w-4 h-4"></i> Salvar Causa Raiz
             </button>
           </div>
@@ -1792,6 +2146,15 @@
       <!-- VIEW: DOSSIÊ PDF OFICIAL -->
       <!-- ============================================== -->
       <div id="view-dossier" class="tab-view hidden space-y-6">
+
+        <!-- Seleção de Ocorrência -->
+        <div class="bg-slate-900/60 border border-slate-800 p-5 rounded-2xl">
+          <label class="block text-xs font-bold text-slate-300 mb-2">Selecione a Ocorrência (Necessário para avaliação):</label>
+          <select id="dossier-incident-select" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-sm text-slate-200 focus:border-blue-500 outline-none transition-all" onchange="App.handleDossierIncidentSelect()">
+            <option value="">Selecione uma ocorrência ativa...</option>
+          </select>
+        </div>
+
         <div class="no-print flex items-center justify-between bg-slate-900/60 border border-slate-800 p-4 rounded-2xl">
           <div>
             <h2 class="text-sm font-bold text-white">Dossiê Técnico para Auditoria e Seguradora</h2>
@@ -1838,7 +2201,10 @@
               </select>
             </div>
 
-            <textarea id="docs-parecer" rows="8" placeholder="Redija o parecer técnico conclusivo sobre o sinistro..." class="w-full bg-slate-950 border border-slate-800 rounded-lg p-3 text-xs text-slate-200 flex-1 focus:border-blue-500 outline-none resize-none" oninput="App.saveParecer()"></textarea>
+            <textarea id="docs-parecer" rows="8" placeholder="Redija o parecer técnico conclusivo sobre o sinistro..." class="w-full bg-slate-950 border border-slate-800 rounded-lg p-3 text-xs text-slate-200 flex-1 focus:border-blue-500 outline-none resize-none"></textarea>
+            <button onclick="App.submitParecer()" class="w-full mt-4 bg-blue-600 hover:bg-blue-500 text-white font-bold py-3 rounded-xl transition-all shadow-lg flex items-center justify-center gap-2 text-sm">
+              <i data-lucide="send" class="w-4 h-4"></i> Enviar Informação (Salvar Parecer)
+            </button>
             
             <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 pt-2 mt-2">
               <div class="flex items-center gap-2 w-full sm:w-auto">
@@ -2118,14 +2484,15 @@
           </div>
           <div>
             <label class="block text-xs font-semibold text-slate-300 mb-1">Tipo de Evento:</label>
-            <select name="eventType" class="w-full bg-slate-950 border border-slate-800 rounded-lg p-2 text-xs text-white">
-              <option value="Tombamento">Tombamento</option>
-              <option value="Colisão Traseira">Colisão Traseira</option>
-              <option value="Avaria Térmica / Carga">Avaria Térmica / Carga</option>
-              <option value="Vazamento Químico">Vazamento Químico</option>
-              <option value="Saída de Pista">Saída de Pista</option>
-                <option value="Outros">Outros</option>
+            <select id="eventTypeSelect" name="eventType" class="w-full bg-slate-950 border border-slate-800 rounded-lg p-2 text-xs text-white" onchange="if(typeof App !== 'undefined' && App.handleEventTypeChange) App.handleEventTypeChange(this)">
+              <option value="Avaria">Avaria</option>
+              <option value="Roubo">Roubo</option>
+              <option value="Incêndio">Incêndio</option>
+              <option value="Perda Total">Perda Total</option>
+              <option value="Colisões">Colisões</option>
+              <option value="Outros">Outros...</option>
             </select>
+            <input type="text" id="customEventType" placeholder="Especifique o tipo de evento (Pressione Enter para usar)" class="hidden mt-2 w-full bg-slate-900 border border-blue-500 rounded-lg p-2 text-xs text-white focus:outline-none" />
           </div>
           
             <div>
@@ -2231,6 +2598,10 @@
       <i data-lucide="layout-dashboard" class="w-5 h-5"></i>
       <span class="text-[10px] font-medium">Início</span>
     </button>
+    <button data-tab="indicators" onclick="App.switchTab('indicators')" class="nav-button mobile-nav-btn flex-1 flex flex-col items-center justify-center py-1 text-slate-400">
+      <i data-lucide="bar-chart-2" class="w-5 h-5 text-indigo-400"></i>
+      <span class="text-[10px] font-medium">KPIs</span>
+    </button>
     
     <button data-tab="saved-plans" onclick="App.switchTab('saved-plans')" class="nav-button mobile-nav-btn flex-1 flex flex-col items-center justify-center py-1 text-slate-400">
       <i data-lucide="saveAll" class="w-5 h-5 text-emerald-400"></i>
@@ -2249,6 +2620,10 @@
     <button data-tab="hazmat" onclick="App.switchTab('hazmat')" class="nav-button mobile-nav-btn flex-1 flex flex-col items-center justify-center py-1 text-slate-400">
       <i data-lucide="flame" class="w-5 h-5 text-rose-400"></i>
       <span class="text-[10px] font-medium">ONU</span>
+    </button>
+    <button data-tab="monitoring" onclick="App.switchTab('monitoring')" class="nav-button mobile-nav-btn flex-1 flex flex-col items-center justify-center py-1 text-slate-400">
+      <i data-lucide="activity" class="w-5 h-5 text-emerald-400"></i>
+      <span class="text-[10px] font-medium">Monitorar</span>
     </button>
 
     <button onclick="App.toggleMobileDrawer()" class="mobile-nav-btn flex-1 flex flex-col items-center justify-center py-1 text-slate-400">
@@ -2299,6 +2674,10 @@
                 <i data-lucide="file-check-2" class="w-4 h-4 text-cyan-400"></i>
                 Plano Logístico & IA
               </button>
+              <button data-tab="monitoring" onclick="App.switchTab('monitoring'); App.toggleMobileDrawer();" class="nav-button w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-bold text-slate-400 hover:bg-slate-800 transition-all">
+                <i data-lucide="activity" class="w-4 h-4 text-emerald-400"></i>
+                Monitoramento Tático
+              </button>
               <button data-tab="saved-plans" onclick="App.switchTab('saved-plans'); App.toggleMobileDrawer();" class="nav-button w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-bold text-slate-400 hover:bg-slate-800 transition-all">
                   <i data-lucide="saveAll" class="w-4 h-4 text-emerald-400"></i>
                   Planos Salvos
@@ -2311,10 +2690,7 @@
                 <i data-lucide="brain-circuit" class="w-4 h-4 text-indigo-400"></i>
                 Plano 5W2H Prescritivo
               </button>
-              <button data-tab="copilot" onclick="App.switchTab('copilot'); App.toggleMobileDrawer();" class="nav-button w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-bold text-slate-400 hover:bg-slate-800 transition-all">
-                <i data-lucide="message-square-code" class="w-4 h-4 text-emerald-400"></i>
-                Copilot Tático 24h
-              </button>
+              
             </nav>
           </div>
 
@@ -2324,6 +2700,10 @@
               <button data-tab="dashboard" onclick="App.switchTab('dashboard'); App.toggleMobileDrawer();" class="nav-button w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-bold text-slate-400 hover:bg-slate-800 transition-all">
                 <i data-lucide="layout-dashboard" class="w-4 h-4 text-blue-400"></i>
                 Dashboard & Mapa
+              </button>
+              <button data-tab="indicators" onclick="App.switchTab('indicators'); App.toggleMobileDrawer();" class="nav-button w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-bold text-slate-400 hover:bg-slate-800 transition-all">
+                <i data-lucide="bar-chart-2" class="w-4 h-4 text-indigo-400"></i>
+                Indicadores e KPIs
               </button>
               <button data-tab="wizard" onclick="App.switchTab('wizard'); App.toggleMobileDrawer();" class="nav-button w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-bold text-slate-400 hover:bg-slate-800 transition-all">
                 <i data-lucide="shield-alert" class="w-4 h-4 text-rose-400"></i>
@@ -2345,6 +2725,16 @@
                 <i data-lucide="file-text" class="w-4 h-4 text-blue-400"></i>
                 Dossiê PDF Oficial
               </button>
+              
+              <button data-tab="cargo-catalog" onclick="App.switchTab('cargo-catalog'); App.toggleMobileDrawer();" class="nav-button w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-bold text-slate-400 hover:bg-slate-800 transition-all">
+                <i data-lucide="package" class="w-4 h-4 text-amber-400"></i>
+                Catálogo de Cargas
+              </button>
+<button data-tab="reverse-logistics" onclick="App.switchTab('reverse-logistics'); App.toggleMobileDrawer();" class="nav-button w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-bold text-slate-400 hover:bg-slate-800 transition-all">
+                <i data-lucide="recycle" class="w-4 h-4 text-emerald-400"></i>
+                Logística Reversa
+              </button>
+
               <button data-tab="docs" onclick="App.switchTab('docs'); App.toggleMobileDrawer();" class="nav-button w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-bold text-slate-400 hover:bg-slate-800 transition-all">
                 <i data-lucide="folder-open" class="w-4 h-4 text-slate-400"></i>
                 Documentação & Laudos
@@ -2519,8 +2909,11 @@
       
       <div class="p-5 border-t border-slate-800 bg-slate-900 rounded-b-2xl">
         <button onclick="App.saveRouteEvaluation()" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-2.5 rounded-xl text-xs transition-all flex justify-center items-center gap-2">
-          <i data-lucide="check" class="w-4 h-4"></i> Salvar Avaliação
-        </button>
+            <i data-lucide="check" class="w-4 h-4"></i> Salvar Avaliação
+          </button>
+          <button type="button" onclick="App.viewRouteEvaluations()" class="w-full mt-2 bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 font-bold py-2.5 rounded-xl text-xs transition-all flex justify-center items-center gap-2">
+            <i data-lucide="history" class="w-4 h-4"></i> Ver Histórico da Rota
+          </button>
       </div>
     </div>
   </div>
@@ -2661,7 +3054,44 @@
   </div>
 
   <!-- SCRIPTS DA APLICAO -->
-  <!-- MODAL DE CENTRAL DE AJUDA -->
+  
+  <!-- MODAL: NOVA CARGA -->
+  <div id="add-cargo-modal" class="hidden fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
+    <div class="bg-slate-900 border border-slate-800 w-full max-w-md rounded-2xl shadow-2xl flex flex-col overflow-hidden">
+      <div class="flex items-center justify-between p-5 border-b border-slate-800 bg-slate-800/50">
+        <h3 class="font-bold text-white flex items-center gap-2"><i data-lucide="package-plus" class="w-5 h-5 text-amber-400"></i> Cadastrar Carga</h3>
+        <button onclick="document.getElementById('add-cargo-modal').classList.add('hidden')" class="text-slate-400 hover:text-white transition-colors">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+      <div class="p-6 space-y-4">
+        <div>
+          <label class="block text-xs font-bold text-slate-400 mb-1">Nome/Descrição da Carga</label>
+          <input type="text" id="new-cargo-name" class="w-full bg-slate-950 border border-slate-800 rounded-lg p-2.5 text-xs text-white outline-none focus:border-amber-500" placeholder="Ex: Soja a Granel">
+        </div>
+        <div>
+          <label class="block text-xs font-bold text-slate-400 mb-1">Categoria</label>
+          <select id="new-cargo-category" class="w-full bg-slate-950 border border-slate-800 rounded-lg p-2.5 text-xs text-white outline-none focus:border-amber-500" onchange="App.updateCargoRiskEstimate()">
+            <option value="Cargas Gerais">Cargas Gerais (Caixas, Fardos, Pallets)</option>
+            <option value="Carga Frigorífica">Carga Frigorífica (Alimentos, Remédios)</option>
+            <option value="Cargas Vivas">Cargas Vivas (Animais)</option>
+            <option value="Carga Indivisível">Carga Indivisível (Máquinas Grandes)</option>
+            <option value="Carga a Granéis">Carga a Granéis (Sólidos, Líquidos)</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-xs font-bold text-slate-400 mb-1">Nota de Risco (0-100)</label>
+          <input type="number" id="new-cargo-risk" class="w-full bg-slate-950 border border-slate-800 rounded-lg p-2.5 text-xs text-white outline-none focus:border-amber-500 font-mono" value="20">
+          <span class="text-[10px] text-slate-500 mt-1 block">A nota é sugerida baseada na categoria, mas pode ser ajustada manualmente.</span>
+        </div>
+        <button onclick="App.saveNewCargo()" class="w-full bg-amber-600 hover:bg-amber-500 text-white font-bold py-3 rounded-xl transition-all shadow-lg flex items-center justify-center gap-2 mt-4 text-sm">
+          Salvar no Catálogo
+        </button>
+      </div>
+    </div>
+  </div>
+
+<!-- MODAL DE CENTRAL DE AJUDA -->
   <div id="help-modal" class="hidden fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
     <div class="bg-slate-900 border border-slate-800 w-full max-w-md rounded-2xl shadow-2xl flex flex-col max-h-[85vh] overflow-hidden">
       <!-- Cabeçalho -->
@@ -2688,11 +3118,17 @@
             <span class="text-xs font-bold text-emerald-300">Suporte Rápido</span>
             <span class="text-[9px] text-slate-400 text-center">Via WhatsApp (24/7)</span>
           </a>
-          <a href="#" onclick="App.showToast('Em breve: Os tutoriais serão disponibilizados nesta seção.', 'info')" class="bg-blue-950/30 border border-blue-900/50 rounded-xl p-4 flex flex-col items-center justify-center gap-2 hover:bg-blue-900/40 transition-colors">
-            <i data-lucide="book-open" class="w-6 h-6 text-blue-400"></i>
-            <span class="text-xs font-bold text-blue-300">Manual de Uso</span>
-            <span class="text-[9px] text-slate-400 text-center">Guias e Tutoriais</span>
+          
+          <a href="#" onclick="App.switchTab('copilot'); document.getElementById('help-modal').classList.add('hidden');" class="bg-blue-600 border border-blue-500 rounded-xl p-4 flex flex-col items-center justify-center gap-2 hover:bg-blue-500 transition-colors relative">
+            <span class="absolute -top-2 -right-2 flex h-4 w-4">
+              <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-white opacity-75"></span>
+              <span class="relative inline-flex rounded-full h-4 w-4 bg-blue-100"></span>
+            </span>
+            <i data-lucide="bot" class="w-6 h-6 text-white"></i>
+            <span class="text-xs font-bold text-white">Copilot Tático 24h</span>
+            <span class="text-[9px] text-blue-200 text-center">IA Assistente</span>
           </a>
+
         </div>
 
         <div>
@@ -2728,7 +3164,7 @@
 
   <script src="js/lucide.min.js"></script>
   <script src="js/leaflet.js"></script>
-  <script src="js/aws-location.js"></script>
+  <script src="js/google-location.js"></script>
   <script src="js/state.js"></script>
   <script src="js/hazmat-db.js"></script>
   <script src="js/risk-engine.js"></script>

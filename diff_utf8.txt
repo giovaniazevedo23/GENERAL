@@ -1,0 +1,599 @@
+﻿diff --git a/js/app.js b/js/app.js
+index f9a5627..1ee8de1 100644
+--- a/js/app.js
++++ b/js/app.js
+@@ -1,4 +1,4 @@
+-´╗┐/**
++/**
+  * GENERAL App - Controlador Principal da Aplica├º├úo
+  * Integrado com:
+  * 1. Planejador Log├¡stico com Auto-Otimiza├º├úo para 100% Seguro por IA (Antes vs. Depois)
+@@ -229,8 +229,10 @@ const App = {
+       let icon = 'phone-call';
+       if(task.action === 'ACIONAR') icon = 'shield-alert';
+       if(task.action === 'EMAIL') icon = 'mail';
+-
++      if(task.action === 'NOTIFICAR') icon = 'bell';
+       
++      const cardStyle = isDone ? 'bg-emerald-900/20 border border-emerald-500/50 opacity-80' : 'bg-slate-900/40 border border-slate-800';
++
+       let contactActionBtn = '';
+       if (task.contact) {
+           if (task.action === 'LIGAR') {
+@@ -248,7 +250,7 @@ const App = {
+ 
+       const card = document.createElement('div');
+       card.className = `p-4 rounded-2xl border ${isDone ? 'bg-slate-900/40 border-emerald-500/30' : 'bg-slate-900/60 border-slate-700'} flex flex-col gap-3 transition-all relative group`;
+-      card.innerHTML = `
++            card.innerHTML = `
+         <div class="flex items-start justify-between">
+           <div class="flex items-center gap-2 ${actionColor} font-bold text-xs uppercase">
+             <i data-lucide="${icon}" class="w-4 h-4"></i> ${task.action}
+@@ -259,6 +261,8 @@ const App = {
+         </div>
+         <h4 class="text-sm font-bold ${isDone ? 'text-slate-400 line-through' : 'text-white'}">${task.target}</h4>
+         ${task.details ? `<p class="text-[11px] text-slate-400 leading-relaxed">${task.details}</p>` : ''}
++        ${task.contact ? `<p class="text-[11px] font-mono text-slate-300 bg-slate-950 p-2 rounded border border-slate-800">${task.contact}</p>` : ''}
++        ${contactActionBtn}
+         
+         <button onclick="App.toggleGoldenTask('${task.id}')" class="mt-auto w-full py-2 rounded-xl text-xs font-bold transition-all border ${isDone ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400' : 'bg-slate-950 border-slate-600 text-slate-300 hover:border-blue-500 hover:text-white'}">
+           ${isDone ? '<i data-lucide="check-circle" class="w-4 h-4 inline mr-1"></i> Conclu├¡do' : 'Marcar como Conclu├¡do'}
+@@ -1322,8 +1326,19 @@ Favor confirmar deslocamento da ${base.name}.`);
+     };
+   },
+ 
+-  loadPlanPreset(index = 0) {
++  async loadPlanPreset(index = 0) {
+     const preset = LogisticsPlanner.DEFAULT_PLANS[index] || LogisticsPlanner.DEFAULT_PLANS[0];
++    
++    // Set states first
++    if (preset.originState && document.getElementById('plan-origin-state')) {
++      document.getElementById('plan-origin-state').value = preset.originState;
++      await this.loadCities('plan-origin-state', 'plan-origin-city');
++    }
++    if (preset.destState && document.getElementById('plan-dest-state')) {
++      document.getElementById('plan-dest-state').value = preset.destState;
++      await this.loadCities('plan-dest-state', 'plan-dest-city');
++    }
++
+     if (document.getElementById('plan-client-name')) document.getElementById('plan-client-name').value = preset.clientName;
+     if (document.getElementById('plan-client-contact')) document.getElementById('plan-client-contact').value = preset.clientContact;
+     if (document.getElementById('plan-client-phone')) document.getElementById('plan-client-phone').value = preset.clientPhone;
+@@ -1354,346 +1369,45 @@ Favor confirmar deslocamento da ${base.name}.`);
+       return;
+     }
+     
+-    this.showToast('Analisando plano e buscando dados da AWS Location e clima real...');
++    this.showToast('Analisando plano e buscando dados da Google Location e clima real...');
+     
+     // Process weather for origin and destination
+     await this.fetchRealWeather(plan.origin, 'origem');
+     await this.fetchRealWeather(plan.destination, 'destino');
+     
+-    // AWS Location Service Integration
++    // Google Location Service Integration
+     try {
+-      if (window.AWSLocation) {
++      if (window.LocationService) {
+         // Geocodifica├º├úo Origem
+         const originRef = document.getElementById('plan-origin-ref').value;
+         const originQuery = originRef ? `${originRef}, ${plan.origin}` : plan.origin;
+-        const originCoords = await window.AWSLocation.geocode(originQuery);
++        const originCoords = await window.LocationService.geocode(originQuery);
+         
+         // Geocodifica├º├úo Destino
+         const destRef = document.getElementById('plan-dest-ref').value;
+         const destQuery = destRef ? `${destRef}, ${plan.destination}` : plan.destination;
+-        const destCoords = await window.AWSLocation.geocode(destQuery);
++        const destCoords = await window.LocationService.geocode(destQuery);
+         
+         if (!originCoords) {
+-          this.showToast(`AWS Geocode falhou para a Origem: ${originQuery}`, 'error');
++          this.showToast(`Google Geocode falhou para a Origem: ${originQuery}`, 'error');
+           document.getElementById('plan-duration').value = "Falha no Geocode Origem";
+           document.getElementById('plan-dist').value = "";
+         }
+         if (!destCoords) {
+-          this.showToast(`AWS Geocode falhou para o Destino: ${destQuery}`, 'error');
++          this.showToast(`Google Geocode falhou para o Destino: ${destQuery}`, 'error');
+           document.getElementById('plan-duration').value = "Falha no Geocode Destino";
+           document.getElementById('plan-dist').value = "";
+         }
+ 
+         if (originCoords && destCoords) {
+           this.showToast('Geocodifica├º├úo conclu├¡da. Calculando rota...', 'info');
+-          const routeData = await window.AWSLocation.calculateRoute(originCoords, destCoords);
++          const routesList = await window.LocationService.calculateRoute(originCoords, destCoords);
+           
+-          if (routeData) {
+-            document.getElementById('plan-dist').value = Math.round(routeData.distanceKm);
+-            
+-            // Regra de Neg├│cio (Previs├úo de Dias)
+-            const totalHours = routeData.durationSeconds / 3600;
+-            const predictedDays = Math.ceil(totalHours / 8);
+-            const formattedTime = `${Math.floor(totalHours)}h ${Math.round((totalHours % 1) * 60)}m`;
+-            
+-            const durationInput = document.getElementById('plan-duration');
+-            if (durationInput) {
+-              durationInput.value = `${formattedTime} (${predictedDays} dia${predictedDays > 1 ? 's' : ''} de viagem estimad${predictedDays > 1 ? 'os' : 'o'})`;
+-            }
+-
+-            // Auto-preencher rodovias usando IA
+-            const roadsInput = document.getElementById('plan-roads');
+-            if (roadsInput && (!roadsInput.value || roadsInput.value.trim() === '')) {
+-              roadsInput.value = "Identificando rodovias com IA...";
+-              const prompt = `Liste apenas os nomes/c├│digos das principais rodovias ou avenidas (ex: BR-116, SP-280, Av. Brasil) usadas na rota rodovi├íria mais comum entre ${originQuery} e ${destQuery}. Seja breve e retorne apenas as rodovias separadas por v├¡rgula.`;
+-              GeminiService.callGemini(prompt).then(roads => {
+-                roadsInput.value = roads.replace(/\*/g, '').trim();
+-                this.showToast('Rodovias previstas identificadas pela IA.', 'info');
+-              }).catch(err => {
+-                roadsInput.value = "";
+-                console.error("Erro ao identificar rodovias:", err);
+-              });
+-            }
+-
+-            // RESTAURAR MAPA INTERATIVO NO PLANNER
+-            const mapContainer = document.getElementById('planner-map-container');
+-            if (mapContainer) {
+-              mapContainer.classList.remove('hidden');
+-              mapContainer.classList.add('flex');
+-              
+-              if (!window.plannerMapController) {
+-                window.plannerMapController = new GeneralMapController('planner-map');
+-                window.plannerMapController.init(originCoords[0], originCoords[1], 10);
+-              }
+-              
+-              if (routeData.geometry && routeData.geometry.length > 0) {
+-                window.plannerMapController.drawRoute(routeData.geometry);
+-              } else {
+-                // Se a AWS v2 n├úo retornou geometria da perna, ou s├│ queremos centralizar
+-                window.plannerMapController.updateMapLocation(originCoords[0], originCoords[1]);
+-              }
+-              window.plannerMapController.invalidateSize();
+-            }
+-
+-            this.showToast(`Rota tra├ºada via AWS! Dist├óncia: ${routeData.distanceKm.toFixed(1)} km | Previs├úo: ${predictedDays} dia(s)`, 'success');
+-          } else {
+-            // Tratamento especial para cidades sem interliga├º├úo rodovi├íria (ex: Ilha de Maraj├│)
+-            this.showToast('AWS Location n├úo encontrou uma rota rodovi├íria v├ílida entre estes dois pontos.', 'warning');
+-            document.getElementById('plan-duration').value = "Sem Rota Terrestre Dispon├¡vel";
+-            document.getElementById('plan-dist').value = "";
+-          }
+-        }
+-      } else {
+-        this.showToast('M├│dulo AWS Location n├úo carregado.', 'error');
+-      }
+-    } catch(err) {
+-      console.error('Erro AWS Location:', err);
+-      this.showToast('Erro ao processar rota na AWS Location.', 'error');
+-    }
+-    
+-    // O usu├írio solicitou que a IA audite automaticamente o plano logo ap├│s identificar as rotas
+-    this.runLogisticsPlanAudit();
+-    
+-    this.syncPredictiveFromCurrentPlan(false);
+-  },
+-
+-  async fetchRealWeather(cityString, type) {
+-    if (!cityString) return;
+-    try {
+-      const cityPart = cityString.split(',')[0];
+-      const cityName = cityPart.includes(' - ') ? cityPart.split(' - ').pop().replace(/\s*\(.*\)\s*/, '').trim() : cityPart.replace(/\s*\(.*\)\s*/, '').trim();
+-      // 1. Geocodifica├º├úo Open-Meteo
+-      const geoResponse = await fetch(`https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(cityName)}&count=1&language=pt`);
+-      if (!geoResponse.ok) throw new Error('Falha na API de Geocodifica├º├úo');
+-      const geoData = await geoResponse.json();
+-      
+-      if (!geoData.results || geoData.results.length === 0) {
+-        throw new Error('Cidade n├úo encontrada no Geocoder');
+-      }
+-      
+-      const location = geoData.results[0];
+-      
+-      // 2. Clima Open-Meteo
+-      const weatherResponse = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${location.latitude}&longitude=${location.longitude}&current_weather=true&daily=temperature_2m_max,temperature_2m_min,precipitation_probability_max&timezone=auto`);
+-      if (!weatherResponse.ok) throw new Error('Falha na API de Clima Open-Meteo');
+-      const weatherData = await weatherResponse.json();
+-      
+-      const current = weatherData.current_weather;
+-      const daily = weatherData.daily;
+-      
+-      const wmoCodes = {
+-        0: 'C├®u Limpo', 1: 'Maiormente Limpo', 2: 'Parcialmente Nublado', 3: 'Nublado',
+-        45: 'N├®voa', 48: 'N├®voa G├®lida', 51: 'Chuvisco Leve', 53: 'Chuvisco Moderado', 55: 'Chuvisco Forte',
+-        56: 'Chuvisco Congelante Leve', 57: 'Chuvisco Congelante Forte', 61: 'Chuva Leve', 63: 'Chuva Moderada', 65: 'Chuva Forte',
+-        66: 'Chuva Congelante Leve', 67: 'Chuva Congelante Forte', 71: 'Neve Leve', 73: 'Neve Moderada', 75: 'Neve Forte',
+-        77: 'Gr├úos de Neve', 80: 'Pancadas de Chuva Leves', 81: 'Pancadas de Chuva Moderadas', 82: 'Pancadas de Chuva Fortes',
+-        85: 'Pancadas de Neve Leves', 86: 'Pancadas de Neve Fortes', 95: 'Tempestade', 96: 'Tempestade c/ Granizo Leve', 99: 'Tempestade c/ Granizo Forte'
+-      };
+-      
+-      const weatherDesc = wmoCodes[current.weathercode] || 'Desconhecido';
+-      const temp = current.temperature;
+-      const minTemp = daily.temperature_2m_min[0];
+-      const maxTemp = daily.temperature_2m_max[0];
+-      const precipChance = daily.precipitation_probability_max ? daily.precipitation_probability_max[0] : 'N/A';
+-
+-      if (!this.currentWeather) this.currentWeather = {};
+-      this.currentWeather[type] = {
+-        desc: weatherDesc,
+-        temp: temp,
+-        min: minTemp,
+-        max: maxTemp,
+-        precip: precipChance
+-      };
+-
+-      const weatherDiv = document.getElementById(`weather-${type}`);
+-      if (weatherDiv) {
+-        weatherDiv.innerHTML = `
+-          <div class="bg-slate-950/80 p-4 rounded-xl border border-slate-800">
+-            <h4 id="weather-${type}-title" class="text-sm font-bold text-slate-200 mb-4">Previs├úo Real para ${location.name} (Fonte: Open-Meteo)</h4>
+-            <div class="flex items-center gap-6">
+-              <div class="flex flex-col items-center justify-center">
+-                <i data-lucide="cloud" class="w-12 h-12 text-blue-400"></i>
+-                <span class="text-2xl font-bold text-white mt-2">${temp}├é┬░C</span>
+-              </div>
+-              <div class="flex-1">
+-                <div class="text-sm text-slate-300 font-medium">${weatherDesc}</div>
+-                <div class="text-xs text-slate-400 mt-1 flex flex-wrap items-center gap-3">
+-                  <span>Min: ${minTemp}├é┬░</span>
+-                  <span>Max: ${maxTemp}├é┬░</span>
+-                  <span class="text-blue-400 flex items-center gap-1"><i data-lucide="droplets" class="w-3 h-3"></i> ${precipChance}%</span>
+-                </div>
+-              </div>
+-            </div>
+-          </div>
+-        `;
+-        lucide.createIcons();
+-      }
+-    } catch (err) {
+-      console.error(`Erro ao buscar clima para ${cityString}:`, err);
+-      const weatherDiv = document.getElementById(`weather-${type}`);
+-      if (weatherDiv) {
+-        weatherDiv.innerHTML = `
+-          <div class="bg-slate-900/50 p-4 rounded-xl border border-rose-500/30 text-rose-400">
+-            <h4 class="text-sm font-bold mb-2">Previs├úo Indispon├¡vel</h4>
+-            <p class="text-xs">N├úo foi poss├¡vel carregar a previs├úo do tempo real para este local.</p>
+-          </div>
+-        `;
+-      }
+-    }
+-  },
+-
+-  auditTimeout: null,
+-
+-  async runLogisticsPlanAudit() {
+-    const plan = this.getPlanFromInputs();
+-    
+-    // Mostra estado de carregamento imediatamente
+-    const scoreNum = document.getElementById('plan-score-num');
+-    if (scoreNum) scoreNum.innerHTML = '<i data-lucide="loader-2" class="w-8 h-8 animate-spin mx-auto text-blue-500"></i>';
+-    if (window.lucide) lucide.createIcons();
+-
+-    const statusEl = document.getElementById('plan-audit-status');
+-    if (statusEl) {
+-      statusEl.textContent = 'IA Analisando Plano...';
+-      statusEl.style.color = '#3b82f6'; // blue-500
+-    }
+-
+-    const defectsBanner = document.getElementById('live-defects-banner');
+-    const defectsText = document.getElementById('live-defects-text');
+-    const defectsAction = document.getElementById('live-defects-action');
+-    const defectsTitle = document.getElementById('defects-banner-title');
+-
+-    if (defectsBanner) {
+-       defectsBanner.className = 'bg-slate-900/50 border border-slate-700 p-4 rounded-2xl flex items-center justify-center';
+-       if(defectsText) defectsText.innerHTML = '<span class="text-slate-400 text-xs flex items-center gap-2"><i data-lucide="loader-2" class="w-3 h-3 animate-spin"></i> Consultando Motor Preditivo (Gemini API)...</span>';
+-       if (window.lucide) lucide.createIcons();
+-    }
+-
+-    // Limpa o timeout anterior para evitar m├║ltiplas chamadas
+-    if (this.auditTimeout) {
+-      clearTimeout(this.auditTimeout);
+-    }
+-
+-    // Define um novo timeout (Debounce de 1.5 segundos)
+-    this.auditTimeout = setTimeout(async () => {
+-      try {
+-        const audit = await LogisticsPlanner.auditPlan(plan);
+-
+-        if (scoreNum) scoreNum.textContent = `${audit.safetyScore}%`;
+-
+-        const scoreGlow = document.getElementById('plan-score-glow');
+-        if (scoreGlow) {
+-          scoreGlow.style.borderColor = audit.statusColor;
+-          scoreGlow.style.boxShadow = `0 0 35px -5px ${audit.statusColor}55`;
+-        }
+-
+-        const badgeEl = document.getElementById('plan-audit-badge');
+-        if (badgeEl) {
+-          badgeEl.textContent = audit.safetyScore >= 75 ? 'SEGURO' : audit.safetyScore >= 50 ? 'RESTRI├ç├âãÆO' : 'CR├ìTICO';
+-          badgeEl.className = `px-2.5 py-0.5 rounded-full text-xs font-bold ${audit.statusClass}`;
+-        }
+-
+-        if (statusEl) {
+-          statusEl.textContent = audit.statusLabel;
+-          statusEl.style.color = audit.statusColor;
+-        }
+-
+-        if (defectsBanner && defectsText) {
+-          if (audit.warnings.length > 0) {
+-            defectsBanner.classList.remove('hidden');
+-            defectsBanner.className = 'flex flex-col gap-3 p-5 rounded-2xl bg-gradient-to-r from-rose-950/90 via-red-950/70 to-slate-900 border border-rose-500/50 shadow-[0_0_20px_rgba(225,29,72,0.15)] animate-pulse';
+-            if (defectsTitle) defectsTitle.textContent = `${100 - audit.safetyScore} RISCO - ${audit.safetyScore >= 50 ? 'ALERTA' : 'CR├ìTICO'}`;
+-            defectsText.innerHTML = audit.warnings.map(w => `<div class="flex items-start gap-1.5"><span class="text-rose-400 mt-1 text-[10px]">├óÔÇö┬Å</span> <span><strong>${w.title}:</strong> ${w.description}</span></div>`).join('');
+-            if (defectsAction) defectsAction.innerHTML = "A IA recomenda reformular o cronograma de sa├¡da ou acionar a Corre├º├úo Autom├ítica para mitiga├º├úo.";
+-          } else {
+-            defectsBanner.className = 'bg-emerald-950/40 border border-emerald-500/40 p-4 rounded-2xl flex items-center gap-3';
+-            defectsBanner.innerHTML = '<span class="text-xl">├ó┼ô┬¿</span><div class="text-emerald-200 text-sm"><strong>Nenhum defeito detectado!</strong> O plano est├í com seguran├ºa m├íxima para despacho.</div>';
+-          }
+-        }
+-
+-        const warnContainer = document.getElementById('plan-warnings-container');
+-        if (warnContainer) {
+-          warnContainer.innerHTML = audit.warnings.map(w => `
+-            <div class="p-2.5 rounded-xl bg-slate-950 border border-rose-500/30 text-slate-300">
+-              <div class="flex items-center justify-between font-bold text-rose-400 text-xs mb-1">
+-                <span>├ó┼í┬á├»┬©┬Å ${w.title}</span>
+-                <span class="font-mono text-[10px] text-rose-500">${w.penalty}</span>
+-              </div>
+-              <p class="text-[11px] text-slate-400 leading-snug">${w.description}</p>
+-            </div>
+-          `).join('') || '<p class="text-xs text-emerald-400">Nenhum perigo cr├¡tico detectado.</p>';
+-        }
+-
+-        const prescContainer = document.getElementById('plan-prescriptions-container');
+-        if (prescContainer) {
+-          prescContainer.innerHTML = audit.prescriptions.map(p => `
+-            <div class="p-2.5 rounded-xl bg-cyan-950/30 border border-cyan-500/40 text-slate-300">
+-              <div class="font-bold text-cyan-300 text-xs mb-1">├░┼©ÔÇÖ┬í ${p.action}</div>
+-              <p class="text-[11px] text-slate-300 leading-snug">${p.detail}</p>
+-            </div>
+-          `).join('') || '<p class="text-xs text-slate-500">Nenhum ajuste necess├írio.</p>';
+-        }
+-        
+-        this.renderMarketplace();
+-      } catch (err) {
+-        console.error("Erro na auditoria com Gemini", err);
+-        if (scoreNum) scoreNum.textContent = `ERR`;
+-      }
+-    }, 1500); // 1.5 seconds debounce
+-  },
+-
+-  async runAWS_AIRouting() {
+-    const originCity = document.getElementById('plan-origin-city')?.value;
+-    const destCity = document.getElementById('plan-dest-city')?.value;
+-    const originState = document.getElementById('plan-origin-state')?.value || '';
+-    const destState = document.getElementById('plan-dest-state')?.value || '';
+-    const originRef = document.getElementById('plan-origin-ref')?.value || '';
+-    const destRef = document.getElementById('plan-dest-ref')?.value || '';
+-    
+-    if (!originCity || !destCity) {
+-      this.showToast('Informe a Origem (Cidade) e o Destino (Cidade) para ativar a previs├úo.', true);
+-      return;
+-    }
+-    
+-    this.showToast(`Buscando rota AWS e previs├úo do tempo: ${originCity} -> ${destCity}...`);
+-    
+-    // Process weather for origin and destination
+-    await this.fetchRealWeather(originCity, 'origem');
+-    await this.fetchRealWeather(destCity, 'destino');
+-    
+-    // AWS Location Service Integration
+-    try {
+-      if (window.AWSLocation) {
+-        // Query formata├º├úo: CEP, Cidade, Estado, Brasil
+-        const originQuery = originRef ? `${originRef}, ${originCity}, ${originState}, Brazil` : `${originCity}, ${originState}, Brazil`;
+-        const originCoords = await window.AWSLocation.geocode(originQuery);
+-        
+-        const destQuery = destRef ? `${destRef}, ${destCity}, ${destState}, Brazil` : `${destCity}, ${destState}, Brazil`;
+-        const destCoords = await window.AWSLocation.geocode(destQuery);
+-        
+-        if (!originCoords || !destCoords) {
+-          this.showToast(`AWS Geocode falhou (Revise os CEPs e Cidades).`, true);
+-          return;
+-        }
+-
+-        const routeData = await window.AWSLocation.calculateRoute(originCoords, destCoords);
+-        if (routeData) {
+-          document.getElementById('plan-dist').value = Math.round(routeData.distanceKm);
+-          
+-          const totalHours = routeData.durationSeconds / 3600;
+-          const predictedDays = Math.floor(totalHours / 8); // Assuming 8 hours of driving per day
+-          const remainingHours = Math.round(totalHours % 8);
+-          
+-          const durationInput = document.getElementById('plan-duration');
+-          if (durationInput) {
+-            let durText = '';
+-            if (predictedDays > 0) durText += `${predictedDays} dias `;
+-            if (remainingHours > 0 || predictedDays === 0) durText += `${remainingHours} horas`;
+-            durationInput.value = durText.trim();
+-          }
+-
+-          // Atualizar Custo de Combust├¡vel
+-          this.simulateFuelCost();
++          if (routesList && routesList.length > 0) {
++          window.currentRoutesList = routesList;
++          const routeData = routesList.find(r => r.isMain) || routesList[0];
++          this.applySelectedRouteToForm(routeData);
++          this.renderRouteOptionsUI(routesList);
+ 
+           const mapContainer = document.getElementById('planner-map-container');
+           if (mapContainer) {
+@@ -1712,17 +1426,69 @@ Favor confirmar deslocamento da ${base.name}.`);
+                window.plannerMapController.invalidateSize();
+             }, 300);
+           }
+-          this.showToast('Previs├úo AWS ativada e rota calculada com sucesso!');
++          this.showToast('Previs├úo Google ativada e rota calculada com sucesso!');
+         }
+       } else {
+-        this.showToast('M├│dulo AWS Location n├úo carregado.', 'error');
++        this.showToast('M├│dulo Google Location n├úo carregado.', 'error');
+       }
+     } catch(err) {
+-      console.error('Erro AWS Location:', err);
+-      this.showToast('Erro ao processar rota na AWS Location.', 'error');
++      console.error('Erro Google Location:', err);
++      this.showToast('Erro ao processar rota na Google Location.', 'error');
++    }
++  },
++
++  
++  renderRouteOptionsUI(routesList) {
++    let container = document.getElementById('route-options-container');
++    if (!container) {
++      const mapContainer = document.getElementById('planner-map-container');
++      if (mapContainer) {
++        container = document.createElement('div');
++        container.id = 'route-options-container';
++        container.className = 'w-full mt-3 flex flex-col gap-2';
++        mapContainer.parentNode.insertBefore(container, mapContainer.nextSibling);
++      }
++    }
++    
++    if (container) {
++      container.innerHTML = '<h3 class="text-slate-300 font-bold text-sm">Op├º├Áes de Rota:</h3>';
++      routesList.forEach(route => {
++        const totalHours = route.durationSeconds / 3600;
++        const formattedTime = `${Math.floor(totalHours)}h ${Math.round((totalHours % 1) * 60)}m`;
++        
++        const btn = document.createElement('button');
++        btn.className = `text-left p-3 rounded-lg border transition-all ${route.isMain ? 'bg-blue-600 border-blue-500 text-white' : 'bg-slate-800 border-slate-700 text-slate-300 hover:bg-slate-700'}`;
++        btn.innerHTML = `
++          <div class="flex justify-between items-center">
++            <div class="font-bold">${route.name}</div>
++            <div class="${route.isMain ? 'text-blue-200' : 'text-emerald-400'} font-mono text-xs">${formattedTime}</div>
++          </div>
++          <div class="text-xs mt-1 ${route.isMain ? 'text-blue-100' : 'text-slate-400'}">${route.distanceKm.toFixed(1)} km</div>
++        `;
++        
++        btn.onclick = (e) => {
++          e.preventDefault();
++          window.dispatchEvent(new CustomEvent('routeSelected', { detail: { routeId: route.id } }));
++        };
++        container.appendChild(btn);
++      });
+     }
+   },
+ 
++  applySelectedRouteToForm(route) {
++    document.getElementById('plan-dist').value = Math.round(route.distanceKm);
++    
++    const totalHours = route.durationSeconds / 3600;
++    const predictedDays = Math.ceil(totalHours / 8);
++    const formattedTime = `${Math.floor(totalHours)}h ${Math.round((totalHours % 1) * 60)}m`;
++    
++    const durationInput = document.getElementById('plan-duration');
++    if (durationInput) {
++      durationInput.value = `${formattedTime} (${predictedDays} dia${predictedDays > 1 ? 's' : ''} de viagem estimad${predictedDays > 1 ? 'os' : 'o'})`;
++    }
++    this.simulateFuelCost();
++  },
++
+   calculateDeadline() {
+     const deptimeInput = document.getElementById('plan-deptime')?.value;
+     const durationInput = document.getElementById('plan-duration')?.value || '';
+@@ -2793,12 +2559,10 @@ ${NotificationHub.getTemplate('AVISO_CLIENTE_SINISTRO_ATRASO', inc)}
+             <span>&bull;</span>
+             <span>${inc.plate}</span>
+           </div>
+-          ${inc.status !== 'CONCLUIDA' ? `
+           <div class="flex items-center gap-2">
+              <button onclick="event.stopPropagation(); App.editIncident('${inc.id}')" class="text-slate-500 hover:text-blue-400 transition-colors" title="Editar"><i data-lucide="edit-3" class="w-3.5 h-3.5"></i></button>
+              <button onclick="event.stopPropagation(); App.deleteIncident('${inc.id}', false)" class="text-slate-500 hover:text-red-400 transition-colors" title="Apagar"><i data-lucide="trash-2" class="w-3.5 h-3.5"></i></button>
+           </div>
+-          ` : ''}
+         </div>
+       </div>
+     `;
+@@ -3313,9 +3077,9 @@ ${NotificationHub.getTemplate('WHATSAPP_EMERGENCIA', inc)}
+     let lat = -23.5505; // Default (SP)
+     let lng = -46.6333;
+ 
+-    // Tentativa de Geocodifica├º├úo AWS Location Service para a Cidade/Refer├¬ncia
++    // Tentativa de Geocodifica├º├úo Google Location Service para a Cidade/Refer├¬ncia
+     try {
+-      if (window.AWSLocation) {
++      if (window.LocationService) {
+         this.showToast('Buscando localiza├º├úo aproximada via sat├®lite...');
+         
+         const state = formData.get('state') || '';
+@@ -3324,9 +3088,9 @@ ${NotificationHub.getTemplate('WHATSAPP_EMERGENCIA', inc)}
+         const cep = formData.get('cep') || '';
+         const query = cep ? `${cep}, ${cityStr}, Brazil` : `${cityStr}, Brazil`;
+         
+-        console.log('AWS Geocode Query:', query);
++        console.log('Google Geocode Query:', query);
+         
+-        const coords = await window.AWSLocation.geocode(query);
++        const coords = await window.LocationService.geocode(query);
+         if (coords) {
+           lat = coords[0];
+           lng = coords[1];
+@@ -3511,7 +3275,7 @@ Retorne APENAS o HTML da view, usando classes do Tailwind CSS. N├úo inclua \`\`\
+       htmlBody = `
+         <div class="border-b-2 border-slate-900 pb-3 mb-4 flex justify-between items-start">
+           <div>
+-            <h1 class="text-lg font-black tracking-wider text-blue-900 uppercase">GENERAL ├óÔé¼┬ó Folha de Viagem Segura</h1>
++            <h1 class="text-lg font-black tracking-wider text-blue-900 uppercase">GENERAL &bull; Folha de Viagem Segura</h1>
+             <p class="text-xs text-slate-600">Briefing Pr├®-Viagem do Condutor & Valida├º├úo de Risco</p>
+           </div>
+           <div class="text-right font-mono">
+@@ -3530,14 +3294,14 @@ Retorne APENAS o HTML da view, usando classes do Tailwind CSS. N├úo inclua \`\`\
+         </div>
+ 
+         <div class="mb-4 bg-rose-50 border border-rose-200 p-3 rounded">
+-          <h2 class="font-bold text-rose-900 uppercase text-xs mb-1">├ó┼í┬á├»┬©┬Å Perigos & Pontos Cr├¡ticos na Rota:</h2>
++          <h2 class="font-bold text-rose-900 uppercase text-xs mb-1">&#9888;&#65039; Perigos & Pontos Cr├¡ticos na Rota:</h2>
+           <ul class="list-disc pl-4 space-y-1 text-rose-800">
+             ${audit.warnings.map(w => `<li><strong>${w.title}:</strong> ${w.description}</li>`).join('')}
+           </ul>
+         </div>
+ 
+         <div class="mb-4 bg-blue-50 border border-blue-200 p-3 rounded">
+-          <h2 class="font-bold text-blue-900 uppercase text-xs mb-1">├░┼©ÔÇÖ┬í Recomenda├º├Áes Obrigat├│rias de Condu├º├úo:</h2>
++          <h2 class="font-bold text-blue-900 uppercase text-xs mb-1">&#128161; Recomenda├º├Áes Obrigat├│rias de Condu├º├úo:</h2>
+           <ul class="list-disc pl-4 space-y-1 text-blue-800">
+             ${audit.prescriptions.map(p => `<li><strong>${p.action}:</strong> ${p.detail}</li>`).join('')}
+           </ul>
+@@ -4648,6 +4412,31 @@ Retorne APENAS o HTML da view, usando classes do Tailwind CSS. N├úo inclua \`\`\
+     });
+   },
+ 
++  
++  viewRouteEvaluations() {
++      const origin = document.getElementById('route-eval-origin').value;
++      const dest = document.getElementById('route-eval-dest').value;
++      const key = `route_eval_${origin}_${dest}`;
++      
++      const evals = JSON.parse(localStorage.getItem(key) || '[]');
++      if (evals.length === 0) {
++          this.showToast('Nenhuma avalia├º├úo anterior encontrada para esta rota.', 'info');
++          return;
++      }
++      
++      let msg = `Hist├│rico de Avalia├º├Áes:
++Rota: ${origin} -> ${dest}
++
++`;
++      evals.forEach(e => {
++          const dt = new Date(e.date).toLocaleDateString();
++          msg += `[${dt}] Nota: ${e.score}/5
++Riscos: ${e.comments || 'Nenhum'}
++
++`;
++      });
++      alert(msg);
++  },
+   saveRouteEvaluation() {
+     const origin = document.getElementById('route-eval-origin').value;
+     const dest = document.getElementById('route-eval-dest').value;
+@@ -4870,7 +4659,7 @@ Retorne APENAS o HTML da view, usando classes do Tailwind CSS. N├úo inclua \`\`\
+             <div class="field"><strong>Rodovias:</strong> <span>${roads}</span></div>
+             <div class="field"><strong>Sa├¡da:</strong> <span>${depTime}</span></div>
+             <div class="field"><strong>Previs├úo Chegada (Manual):</strong> <span>${deadline}</span></div>
+-            <div class="field"><strong>Previs├úo de Viagem (IA/AWS):</strong> <span style="color: #059669;">${duration}</span></div>
++            <div class="field"><strong>Previs├úo de Viagem (IA/Google):</strong> <span style="color: #059669;">${duration}</span></div>
+           </div>
+         </div>
+         

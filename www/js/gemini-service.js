@@ -3,8 +3,8 @@
  */
 
 const GeminiService = {
-  API_KEY: atob("QUl6YVN5RHhVUzJQLXZqaEVpWXNiOHJoWU9hVHhOT1pvaGFFVm80"),
-  API_URL: "https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:generateContent",
+  API_KEY: "SUA_API_KEY_AQUI", // Removido para segurança
+  API_URL: "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent",
 
   async callGemini(prompt, isJsonResponse = false, maxRetries = 3) {
     let lastError = null;
@@ -104,7 +104,7 @@ const GeminiService = {
         ];
       }
     }
-    return "Resposta simulada da IA (Modo Offline/Mock).";
+    return `**[MODO OFFLINE] Orientações Táticas de Transbordo / Contenção:**\n\n1. **Isole a Área**: Mantenha raio de segurança (mín. 50 metros).\n2. **Acione Socorro**: Ligue 192 (SAMU) e 193 (Bombeiros) se houver vítimas ou vazamento.\n3. **Contenção**: Evite que o produto atinja vias hídricas.\n4. **Notifique**: Informe a Seguradora e PRF (191) imediatamente.\n\n*(Nota do Sistema: A integração com a IA está indisponível no momento pois a chave de API configurada não possui a 'Generative Language API' ativada no Google Cloud. Esta é uma resposta de contingência).*`;
   },
 
   async auditLogisticsPlan(plan) {

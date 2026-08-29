@@ -28,6 +28,7 @@ const RiskEngine = {
       factors.push({ name: "Condutor com escoriações/ferimentos leves", points: 10, type: "warning" });
     }
 
+    
     // 2. Fator: Tipo de Carga e Periculosidade
     if (incident.cargoType === "PRODUTO_PERIGOSO") {
       score += 25;
@@ -42,12 +43,21 @@ const RiskEngine = {
           actions.push({ priority: 3, title: "Notificar Órgão Ambiental e Empresa de Pronta Resposta", category: "AMBIENTAL" });
         }
       }
-    } else if (incident.cargoType === "ALTO_VALOR") {
-      score += 15;
-      factors.push({ name: "Carga de Alto Valor Agregado (Risco de Saque/Roubo)", points: 15, type: "warning" });
-      if (!incident.checklists.isolated) {
-        actions.push({ priority: 2, title: "Posicionar Escolta Armada / Preservação no Local", category: "PATRIMÔNIO" });
-      }
+    } else {
+      try {
+        const catalog = JSON.parse(localStorage.getItem('GENERAL_CARGO_CATALOG') || '[]');
+        const cargo = catalog.find(c => c.name === incident.cargoType);
+        if (cargo) {
+          score += cargo.risk;
+          factors.push({ name: `Carga: ${cargo.name} (${cargo.category})`, points: cargo.risk, type: cargo.risk > 40 ? "danger" : "warning" });
+        } else if (incident.cargoType === "ALTO_VALOR") {
+          score += 15;
+          factors.push({ name: "Carga de Alto Valor Agregado (Risco de Saque/Roubo)", points: 15, type: "warning" });
+          if (!incident.checklists.isolated) {
+            actions.push({ priority: 2, title: "Posicionar Escolta Armada / Preservação no Local", category: "PATRIMÔNIO" });
+          }
+        }
+      } catch(e) {}
     }
 
     // 3. Fator: Condições da Pista e Clima

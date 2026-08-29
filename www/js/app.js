@@ -1,4 +1,4 @@
-﻿/**
+/**
  * GENERAL App - Controlador Principal da Aplicação
  * Integrado com:
  * 1. Planejador Logístico com Auto-Otimização para 100% Seguro por IA (Antes vs. Depois)
@@ -23,6 +23,9 @@ const App = {
   },
 
   init() {
+    this.initCargoCatalog();
+    this.populateCargoDropdowns();
+    this.loadCustomEventTypes();
     this.checkAuth();
     this.bindEvents();
     this.renderCurrentIncident();
@@ -98,6 +101,325 @@ const App = {
       }
     }, 1000);
   },
+
+  submitParecer() {
+    const inc = appState.getCurrentIncident();
+    if (!inc) return;
+    const textarea = document.getElementById('docs-parecer');
+    if (!textarea) return;
+    appState.updateCurrentIncident({ docsParecer: textarea.value });
+    textarea.value = '';
+    this.showToast('Parecer Técnico salvo e enviado para o Dossiê!', 'success');
+  },
+
+  saveIshikawa() {
+    const inc = appState.getCurrentIncident();
+    if (!inc) return;
+    
+    // Pegar dados da vistoria
+    const vistoria = {
+      clima: document.getElementById('vistoria-clima')?.value || '',
+      pista: document.getElementById('vistoria-pista')?.value || '',
+      lacre: document.getElementById('vistoria-lacre')?.value || '',
+      condutor: document.getElementById('vistoria-condutor')?.value || '',
+      veiculo: document.getElementById('vistoria-veiculo')?.value || ''
+    };
+    
+    appState.updateCurrentIncident({ vistoria });
+    this.showToast('Investigação de Causa Raiz e Vistoria salvas com sucesso!', 'success');
+  },
+
+  // CATÁLOGO DE CARGAS
+  initCargoCatalog() {
+    let catalog = JSON.parse(localStorage.getItem('GENERAL_CARGO_CATALOG') || 'null');
+    if (!catalog) {
+      catalog = [
+        { id: 1, name: 'Caixas de Eletrônicos', category: 'Cargas Gerais', risk: 20 },
+        { id: 2, name: 'Carnes e Congelados', category: 'Carga Frigorífica', risk: 40 },
+        { id: 3, name: 'Gado de Corte', category: 'Cargas Vivas', risk: 50 },
+        { id: 4, name: 'Turbina Eólica', category: 'Carga Indivisível', risk: 60 },
+        { id: 5, name: 'Soja a Granel', category: 'Carga a Granéis', risk: 70 }
+      ];
+      localStorage.setItem('GENERAL_CARGO_CATALOG', JSON.stringify(catalog));
+    }
+    this.cargoCatalog = catalog;
+  },
+
+  renderCargoCatalog() {
+    const container = document.getElementById('cargo-catalog-list');
+    if (!container) return;
+    
+    if (this.cargoCatalog.length === 0) {
+      container.innerHTML = '<div class="text-center text-slate-500 py-10">Nenhuma carga cadastrada.</div>';
+      return;
+    }
+    
+    container.innerHTML = this.cargoCatalog.map(c => `
+      <div class="bg-slate-900 border border-slate-800 p-4 rounded-xl flex items-center justify-between hover:border-amber-500/50 transition-all">
+        <div class="flex items-center gap-4">
+          <div class="w-10 h-10 rounded-full bg-amber-500/10 text-amber-500 flex items-center justify-center font-bold">
+            ${c.risk}
+          </div>
+          <div>
+            <h4 class="font-bold text-white text-sm">${c.name}</h4>
+            <p class="text-[10px] text-slate-400 uppercase">${c.category}</p>
+          </div>
+        </div>
+        <button onclick="App.deleteCargo(${c.id})" class="text-slate-500 hover:text-red-500 transition-colors">
+          <i data-lucide="trash-2" class="w-4 h-4"></i>
+        </button>
+      </div>
+    `).join('');
+    
+    if (typeof lucide !== 'undefined') lucide.createIcons();
+    this.populateCargoDropdowns();
+  },
+
+  openAddCargoModal() {
+    document.getElementById('add-cargo-modal').classList.remove('hidden');
+    document.getElementById('new-cargo-name').value = '';
+    this.updateCargoRiskEstimate();
+  },
+
+  updateCargoRiskEstimate() {
+    const cat = document.getElementById('new-cargo-category').value;
+    const riskInput = document.getElementById('new-cargo-risk');
+    let risk = 20;
+    if (cat === 'Carga Frigorífica') risk = 40;
+    if (cat === 'Cargas Vivas') risk = 50;
+    if (cat === 'Carga Indivisível') risk = 60;
+    if (cat === 'Carga a Granéis') risk = 70;
+    riskInput.value = risk;
+  },
+
+  saveNewCargo() {
+    const name = document.getElementById('new-cargo-name').value;
+    const category = document.getElementById('new-cargo-category').value;
+    const risk = parseInt(document.getElementById('new-cargo-risk').value, 10);
+    
+    if (!name) {
+      this.showToast('Preencha o nome da carga', 'error');
+      return;
+    }
+    
+    const newCargo = { id: Date.now(), name, category, risk };
+    this.cargoCatalog.push(newCargo);
+    localStorage.setItem('GENERAL_CARGO_CATALOG', JSON.stringify(this.cargoCatalog));
+    
+    document.getElementById('add-cargo-modal').classList.add('hidden');
+    this.showToast('Carga adicionada ao catálogo!', 'success');
+    this.renderCargoCatalog();
+  },
+
+  deleteCargo(id) {
+    if (confirm('Deseja realmente remover esta carga?')) {
+      this.cargoCatalog = this.cargoCatalog.filter(c => c.id !== id);
+      localStorage.setItem('GENERAL_CARGO_CATALOG', JSON.stringify(this.cargoCatalog));
+      this.renderCargoCatalog();
+    }
+  },
+
+  populateCargoDropdowns() {
+    const opts = '<option value="">Selecione o tipo de carga...</option>' + 
+                 this.cargoCatalog.map(c => `<option value="${c.name}">${c.name} (Risco ${c.risk})</option>`).join('');
+    const els = ['plan-cargo', 'incident-cargo', 'select-cargo'];
+    els.forEach(id => {
+      const el = document.getElementById(id);
+      if (el) el.innerHTML = opts;
+    });
+  },
+
+
+
+  populateIncidentSelectors() {
+    const incidents = (window.appState && appState.incidents) ? appState.incidents.filter(i => i.status !== 'CONCLUIDA') : [];
+    const createOptions = (selectId) => {
+      const sel = document.getElementById(selectId);
+      if (!sel) return;
+      sel.innerHTML = '<option value="">Selecione uma ocorrência ativa...</option>';
+      incidents.forEach(inc => {
+        sel.innerHTML += `<option value="${inc.id}">${inc.id} - ${inc.title}</option>`;
+      });
+      if (appState && appState.currentIncidentId) {
+        sel.value = appState.currentIncidentId;
+      }
+    };
+    createOptions('ishikawa-incident-select');
+    createOptions('dossier-incident-select');
+    createOptions('reverse-incident-select');
+  },
+
+  handleIshikawaIncidentSelect() {
+    const val = document.getElementById('ishikawa-incident-select').value;
+    if (val && window.appState) {
+      appState.setCurrentIncident(val);
+      // view is updated via subscribe
+    }
+  },
+  
+  handleDossierIncidentSelect() {
+    const val = document.getElementById('dossier-incident-select').value;
+    if (val && window.appState) {
+      appState.setCurrentIncident(val);
+    }
+  },
+
+  handleReverseIncidentSelect() {
+    const val = document.getElementById('reverse-incident-select').value;
+    const form = document.getElementById('reverse-logistics-form');
+    if (val && window.appState) {
+      appState.setCurrentIncident(val);
+      if (form) form.classList.remove('hidden');
+    } else {
+      if (form) form.classList.add('hidden');
+    }
+  },
+
+  submitReverseLogistics() {
+    if (!window.appState) return;
+    const currentInc = appState.getCurrentIncident();
+    if (!currentInc) return;
+    
+    const statusEl = document.getElementById('reverse-status');
+    const companyEl = document.getElementById('reverse-company');
+    
+    if (!statusEl || !companyEl) return;
+    
+    const reverseData = { 
+        status: statusEl.value, 
+        company: companyEl.value, 
+        processedAt: new Date().toISOString() 
+    };
+    appState.updateCurrentIncident({ reverseLogistics: reverseData });
+    
+    this.showToast('Logística reversa processada com sucesso! Histórico atualizado.', 'success');
+  },
+
+
+
+  handleEventTypeChange(selectElement) {
+    const customInput = document.getElementById('customEventType');
+    if (customInput) {
+      if (selectElement.value === 'Outros') {
+        customInput.classList.remove('hidden');
+        customInput.required = true;
+      } else {
+        customInput.classList.add('hidden');
+        customInput.required = false;
+        customInput.value = '';
+      }
+    }
+  },
+
+  loadCustomEventTypes() {
+    try {
+      const customEvents = JSON.parse(localStorage.getItem('GENERAL_CUSTOM_EVENTS') || '[]');
+      const selectElement = document.getElementById('eventTypeSelect');
+      if (selectElement && customEvents.length > 0) {
+        const options = Array.from(selectElement.options);
+        const outrosIndex = options.findIndex(opt => opt.value === 'Outros');
+        if (outrosIndex > -1) {
+          customEvents.forEach(evt => {
+            if (!Array.from(selectElement.options).find(o => o.value === evt)) {
+               const newOption = new Option(evt, evt);
+               selectElement.insertBefore(newOption, selectElement.options[outrosIndex]);
+            }
+          });
+        }
+      }
+    } catch(e) {
+      console.error(e);
+    }
+  },
+
+  renderIndicatorsTab() {
+    if (!window.appState) return;
+    const incidents = appState.incidents || [];
+    const totalIncidents = incidents.length;
+    
+    let totalPlans = 0;
+    try {
+      const savedPlans = JSON.parse(localStorage.getItem('general_saved_plans') || '[]');
+      totalPlans = savedPlans.length;
+    } catch(e) {}
+
+    const freq = totalPlans > 0 ? ((totalIncidents / totalPlans) * 100).toFixed(1) : (totalIncidents * 10).toFixed(1);
+    
+    let totalCost = 0;
+    let criticalCount = 0;
+    let highCount = 0;
+    let medCount = 0;
+
+    let dmgTotal = 0;
+    let dmgPartial = 0;
+    let dmgNone = 0;
+
+    let totalDowntimeHours = 0;
+    let affectedDeliveries = 0;
+
+    incidents.forEach(inc => {
+      totalCost += Number(inc.cargoValue) || 0;
+
+      if (inc.severity === 'CRITICO' || inc.severity === 'FATALIDADE' || inc.driverStatus === 'FATALIDADE') {
+        criticalCount++;
+      } else if (inc.severity === 'ALTO' || inc.driverStatus === 'FERIDO_GRAVE') {
+        highCount++;
+      } else {
+        medCount++;
+      }
+
+      if (inc.damageCondition === 'TOTAL' || inc.damageCondition === 'PERDA_TOTAL') {
+        dmgTotal++;
+      } else if (inc.damageCondition === 'PARCIAL' || inc.damageCondition === 'PERDA_PARCIAL_VAZAMENTO') {
+        dmgPartial++;
+      } else {
+        dmgNone++;
+      }
+
+      if (inc.status === 'EM_ATENDIMENTO' || inc.status === 'PENDENTE') {
+         totalDowntimeHours += 4.5;
+      } else if (inc.status === 'FINALIZADO') {
+         totalDowntimeHours += 1.5;
+      } else {
+         totalDowntimeHours += 2;
+      }
+
+      affectedDeliveries++; 
+    });
+
+    const elTotal = document.getElementById('kpi-total-incidents');
+    if(elTotal) elTotal.textContent = totalIncidents;
+    
+    const elFreq = document.getElementById('kpi-freq-incidents');
+    if(elFreq) elFreq.textContent = freq + '%';
+    
+    const elCost = document.getElementById('kpi-total-cost');
+    if(elCost) elCost.textContent = totalCost.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    
+    const affectedPercent = totalPlans > 0 ? ((affectedDeliveries / totalPlans) * 100).toFixed(1) : (affectedDeliveries > 0 ? 100 : 0);
+    const elAff = document.getElementById('kpi-affected-deliveries');
+    if(elAff) elAff.textContent = affectedPercent + '%';
+
+    const elDown = document.getElementById('kpi-downtime');
+    if(elDown) elDown.textContent = Math.floor(totalDowntimeHours) + 'h';
+
+    const updateBar = (id, count, total) => {
+      const pct = total > 0 ? Math.round((count / total) * 100) : 0;
+      const valEl = document.getElementById(`val-${id}`);
+      const barEl = document.getElementById(`bar-${id}`);
+      if (valEl) valEl.textContent = pct + '%';
+      if (barEl) barEl.style.width = pct + '%';
+    };
+
+    updateBar('grav-critical', criticalCount, totalIncidents);
+    updateBar('grav-high', highCount, totalIncidents);
+    updateBar('grav-medium', medCount, totalIncidents);
+
+    updateBar('dmg-total', dmgTotal, totalIncidents);
+    updateBar('dmg-partial', dmgPartial, totalIncidents);
+    updateBar('dmg-none', dmgNone, totalIncidents);
+  },
+
 
   toggleMobileDrawer() {
     const overlay = document.getElementById('mobile-drawer-overlay');
@@ -572,26 +894,10 @@ const App = {
   },
 
   switchTab(tabId) {
-    const inc = appState.getCurrentIncident();
-    // Bloqueia abas operacionais se a ocorrência já estiver concluída
-    if (inc && inc.status === 'CONCLUIDA') {
-      const blockedTabs = ['investigation', 'transshipment', 'docs', 'copilot', 'predictive', 'dossier', 'ai-plan'];
-      if (blockedTabs.includes(tabId)) {
-        this.showToast('Ocorrência finalizada. Crie uma nova ocorrência.', 'warning');
-        tabId = 'dashboard';
-      }
-    }
-    
-    
-    // BLOQUEIO DE ABAS: Requer ocorrência ativa
-    const requireIncidentTabs = ['transshipment', 'investigation', 'dossier', 'docs'];
-    if (requireIncidentTabs.includes(tabId) && !inc) {
-      this.showToast('Acesso negado: Abra ou crie uma ocorrência primeiro.', 'error');
-      // Force navigation to dashboard or planner
-      tabId = 'dashboard';
-    }
-
     this.currentTab = tabId;
+    if (['investigation', 'dossier', 'reverse-logistics'].includes(tabId)) { this.populateIncidentSelectors(); }
+    if (tabId === 'cargo-catalog') { this.renderCargoCatalog(); }
+    if (tabId === 'indicators') { this.renderIndicatorsTab(); }
     
     // Update navigation styles
     document.querySelectorAll('.nav-button').forEach(btn => {
@@ -1362,16 +1668,20 @@ Favor confirmar deslocamento da ${base.name}.`);
     
     // AWS Location Service Integration
     try {
-      if (window.AWSLocation) {
+      if (window.LocationService) {
         // Geocodificação Origem
         const originRef = document.getElementById('plan-origin-ref').value;
-        const originQuery = originRef ? `${originRef}, ${plan.origin}` : plan.origin;
-        const originCoords = await window.AWSLocation.geocode(originQuery);
+        const originNeighb = document.getElementById('plan-origin-neighborhood')?.value;
+        const originStr = originNeighb ? (originRef ? `${originRef}, ${originNeighb}` : originNeighb) : originRef;
+        const originQuery = originStr ? `${originStr}, ${plan.origin}` : plan.origin;
+        const originCoords = await window.LocationService.geocode(originQuery);
         
         // Geocodificação Destino
         const destRef = document.getElementById('plan-dest-ref').value;
-        const destQuery = destRef ? `${destRef}, ${plan.destination}` : plan.destination;
-        const destCoords = await window.AWSLocation.geocode(destQuery);
+        const destNeighb = document.getElementById('plan-dest-neighborhood')?.value;
+        const destStr = destNeighb ? (destRef ? `${destRef}, ${destNeighb}` : destNeighb) : destRef;
+        const destQuery = destStr ? `${destStr}, ${plan.destination}` : plan.destination;
+        const destCoords = await window.LocationService.geocode(destQuery);
         
         if (!originCoords) {
           this.showToast(`AWS Geocode falhou para a Origem: ${originQuery}`, 'error');
@@ -1386,7 +1696,8 @@ Favor confirmar deslocamento da ${base.name}.`);
 
         if (originCoords && destCoords) {
           this.showToast('Geocodificação concluída. Calculando rota...', 'info');
-          const routeData = await window.AWSLocation.calculateRoute(originCoords, destCoords);
+          let routeData = await window.LocationService.calculateRoute(originCoords, destCoords);
+          if (Array.isArray(routeData) && routeData.length > 0) routeData = routeData[0];
           
           if (routeData) {
             document.getElementById('plan-dist').value = Math.round(routeData.distanceKm);
@@ -1401,18 +1712,23 @@ Favor confirmar deslocamento da ${base.name}.`);
               durationInput.value = `${formattedTime} (${predictedDays} dia${predictedDays > 1 ? 's' : ''} de viagem estimad${predictedDays > 1 ? 'os' : 'o'})`;
             }
 
-            // Auto-preencher rodovias usando IA
+            // Auto-preencher rodovias usando IA ou engine
             const roadsInput = document.getElementById('plan-roads');
             if (roadsInput && (!roadsInput.value || roadsInput.value.trim() === '')) {
-              roadsInput.value = "Identificando rodovias com IA...";
-              const prompt = `Liste apenas os nomes/códigos das principais rodovias ou avenidas (ex: BR-116, SP-280, Av. Brasil) usadas na rota rodoviária mais comum entre ${originQuery} e ${destQuery}. Seja breve e retorne apenas as rodovias separadas por vírgula.`;
-              GeminiService.callGemini(prompt).then(roads => {
-                roadsInput.value = roads.replace(/\*/g, '').trim();
-                this.showToast('Rodovias previstas identificadas pela IA.', 'info');
-              }).catch(err => {
-                roadsInput.value = "";
-                console.error("Erro ao identificar rodovias:", err);
-              });
+              if (routeData.roads) {
+                roadsInput.value = routeData.roads;
+                this.showToast('Rodovias extraídas diretamente do traçado!', 'success');
+              } else {
+                roadsInput.value = "Identificando rodovias com IA...";
+                const prompt = `Liste apenas os nomes/códigos das principais rodovias ou avenidas (ex: BR-116, SP-280, Av. Brasil) usadas na rota rodoviária mais comum entre ${originQuery} e ${destQuery}. Seja breve e retorne apenas as rodovias separadas por vírgula.`;
+                GeminiService.callGemini(prompt).then(roads => {
+                  roadsInput.value = roads.replace(/\*/g, '').trim();
+                  this.showToast('Rodovias previstas identificadas pela IA.', 'info');
+                }).catch(err => {
+                  roadsInput.value = "";
+                  console.error("Erro ao identificar rodovias:", err);
+                });
+              }
             }
 
             // RESTAURAR MAPA INTERATIVO NO PLANNER
@@ -1427,7 +1743,7 @@ Favor confirmar deslocamento da ${base.name}.`);
               }
               
               if (routeData.geometry && routeData.geometry.length > 0) {
-                window.plannerMapController.drawRoute(routeData.geometry);
+                window.plannerMapController.drawRoutes([routeData]);
               } else {
                 // Se a AWS v2 não retornou geometria da perna, ou só queremos centralizar
                 window.plannerMapController.updateMapLocation(originCoords[0], originCoords[1]);
@@ -1444,7 +1760,7 @@ Favor confirmar deslocamento da ${base.name}.`);
           }
         }
       } else {
-        this.showToast('Módulo AWS Location não carregado.', 'error');
+        this.showToast('Módulo LocationService não carregado.', 'error');
       }
     } catch(err) {
       console.error('Erro AWS Location:', err);
@@ -1663,20 +1979,26 @@ Favor confirmar deslocamento da ${base.name}.`);
     
     // AWS Location Service Integration
     try {
-      if (window.AWSLocation) {
+      if (window.LocationService) {
         // Query formatação: CEP, Cidade, Estado, Brasil
-        const originQuery = originRef ? `${originRef}, ${originCity}, ${originState}, Brazil` : `${originCity}, ${originState}, Brazil`;
-        const originCoords = await window.AWSLocation.geocode(originQuery);
+        const originNeighb = document.getElementById('plan-origin-neighborhood')?.value || '';
+        const originStr = originNeighb ? (originRef ? `${originRef}, ${originNeighb}` : originNeighb) : originRef;
+        const originQuery = originStr ? `${originStr}, ${originCity}, ${originState}, Brazil` : `${originCity}, ${originState}, Brazil`;
+        const originCoords = await window.LocationService.geocode(originQuery);
         
-        const destQuery = destRef ? `${destRef}, ${destCity}, ${destState}, Brazil` : `${destCity}, ${destState}, Brazil`;
-        const destCoords = await window.AWSLocation.geocode(destQuery);
+        const destNeighb = document.getElementById('plan-dest-neighborhood')?.value || '';
+        const destStr = destNeighb ? (destRef ? `${destRef}, ${destNeighb}` : destNeighb) : destRef;
+        const destQuery = destStr ? `${destStr}, ${destCity}, ${destState}, Brazil` : `${destCity}, ${destState}, Brazil`;
+        const destCoords = await window.LocationService.geocode(destQuery);
         
         if (!originCoords || !destCoords) {
           this.showToast(`AWS Geocode falhou (Revise os CEPs e Cidades).`, true);
           return;
         }
 
-        const routeData = await window.AWSLocation.calculateRoute(originCoords, destCoords);
+        let routeData = await window.LocationService.calculateRoute(originCoords, destCoords);
+        if (Array.isArray(routeData) && routeData.length > 0) routeData = routeData[0];
+        
         if (routeData) {
           document.getElementById('plan-dist').value = Math.round(routeData.distanceKm);
           
@@ -1704,7 +2026,7 @@ Favor confirmar deslocamento da ${base.name}.`);
               window.plannerMapController.init(originCoords[0], originCoords[1], 10);
             }
             if (routeData.geometry && routeData.geometry.length > 0) {
-              window.plannerMapController.drawRoute(routeData.geometry);
+              window.plannerMapController.drawRoutes([routeData]);
             } else {
               window.plannerMapController.updateMapLocation(originCoords[0], originCoords[1]);
             }
@@ -1715,7 +2037,7 @@ Favor confirmar deslocamento da ${base.name}.`);
           this.showToast('Previsão AWS ativada e rota calculada com sucesso!');
         }
       } else {
-        this.showToast('Módulo AWS Location não carregado.', 'error');
+        this.showToast('Módulo LocationService não carregado.', 'error');
       }
     } catch(err) {
       console.error('Erro AWS Location:', err);
@@ -2740,7 +3062,7 @@ ${NotificationHub.getTemplate('AVISO_CLIENTE_SINISTRO_ATRASO', inc)}
     log.scrollTop = log.scrollHeight;
 
     setTimeout(async () => {
-      const answer = await AICopilotEngine.askCopilot(text, inc);
+      const answer = `Olá, sou o General. Estou indisponível no momento por falta de inteligência artificial.<br><br>Por favor, entre em contato com a central de ajuda:<br>- E-mail: suporte@general.com<br>- Tel: (11) 99999-9999`;
       const aiBubble = document.createElement('div');
       aiBubble.className = 'flex items-start gap-3 max-w-2xl';
       aiBubble.innerHTML = `
@@ -2795,6 +3117,7 @@ ${NotificationHub.getTemplate('AVISO_CLIENTE_SINISTRO_ATRASO', inc)}
           </div>
           ${inc.status !== 'CONCLUIDA' ? `
           <div class="flex items-center gap-2">
+             <button onclick="event.stopPropagation(); App.downloadConcludedPDF('${inc.id}')" class="text-slate-500 hover:text-emerald-400 transition-colors" title="Baixar Ocorrência (PDF)"><i data-lucide="file-down" class="w-3.5 h-3.5"></i></button>
              <button onclick="event.stopPropagation(); App.editIncident('${inc.id}')" class="text-slate-500 hover:text-blue-400 transition-colors" title="Editar"><i data-lucide="edit-3" class="w-3.5 h-3.5"></i></button>
              <button onclick="event.stopPropagation(); App.deleteIncident('${inc.id}', false)" class="text-slate-500 hover:text-red-400 transition-colors" title="Apagar"><i data-lucide="trash-2" class="w-3.5 h-3.5"></i></button>
           </div>
@@ -2880,6 +3203,15 @@ ${NotificationHub.getTemplate('AVISO_CLIENTE_SINISTRO_ATRASO', inc)}
             </div>
           </div>
           
+          ${inc.reverseLogistics ? `
+          <div class="mb-3 bg-emerald-950/40 border border-emerald-500/50 rounded-lg p-2.5 flex items-start gap-2 shadow-inner">
+            <i data-lucide="recycle" class="w-4 h-4 text-emerald-400 mt-0.5"></i>
+            <div>
+              <span class="text-xs font-bold text-emerald-300 block">Cliente desistiu, produtos reaproveitados</span>
+              <span class="text-[10px] text-emerald-500">Parceiro de reciclagem/recondicionamento: <b>${inc.reverseLogistics.company}</b></span>
+            </div>
+          </div>
+          ` : ''}
           <h3 class="font-bold text-white text-base leading-snug mb-2">${inc.title}</h3>
           <p class="text-xs text-slate-400 mb-4 flex-1 line-clamp-3">${inc.docsParecer || 'Sem parecer técnico redigido.'}</p>
           
@@ -3132,12 +3464,24 @@ ${NotificationHub.getTemplate('AVISO_CLIENTE_SINISTRO_ATRASO', inc)}
   },
 
   renderDossierTab() {
-    const inc = appState.getCurrentIncident();
-    if (!inc) return;
-    const container = document.getElementById('dossier-preview-container');
-    if (container) {
-      container.innerHTML = ReportPDFGenerator.generateExecutiveHTML(inc);
+      const sel = document.getElementById('dossier-incident-select');
+      const inc = (sel && sel.value) ? appState.incidents.find(i => i.id === sel.value) : null;
+      const container = document.getElementById('dossier-preview-container');
+      if (!container) return;
+      
+      if (!inc) {
+      container.innerHTML = `
+        <div class="flex flex-col items-center justify-center p-12 bg-slate-900/50 rounded-2xl border border-slate-800">
+          <i data-lucide="folder-search" class="w-16 h-16 text-slate-500 mb-4 opacity-50"></i>
+          <h3 class="text-lg font-bold text-slate-300 mb-2">Nenhuma Ocorrência Selecionada</h3>
+          <p class="text-sm text-slate-500 text-center max-w-md">Para visualizar o Dossiê Executivo, por favor, selecione uma ocorrência no filtro global localizado no topo da tela.</p>
+        </div>
+      `;
+      if (window.lucide) window.lucide.createIcons();
+      return;
     }
+    
+    container.innerHTML = ReportPDFGenerator.generateExecutiveHTML(inc);
   },
 
   updateSLATimers() {
@@ -3315,7 +3659,7 @@ ${NotificationHub.getTemplate('WHATSAPP_EMERGENCIA', inc)}
 
     // Tentativa de Geocodificação AWS Location Service para a Cidade/Referência
     try {
-      if (window.AWSLocation) {
+      if (window.LocationService) {
         this.showToast('Buscando localização aproximada via satélite...');
         
         const state = formData.get('state') || '';
@@ -3326,7 +3670,7 @@ ${NotificationHub.getTemplate('WHATSAPP_EMERGENCIA', inc)}
         
         console.log('AWS Geocode Query:', query);
         
-        const coords = await window.AWSLocation.geocode(query);
+        const coords = await window.LocationService.geocode(query);
         if (coords) {
           lat = coords[0];
           lng = coords[1];
@@ -3384,9 +3728,37 @@ ${NotificationHub.getTemplate('WHATSAPP_EMERGENCIA', inc)}
        }
     }
 
+    
+    let finalEventType = formData.get('eventType');
+    if (finalEventType === 'Outros') {
+      const customInput = document.getElementById('customEventType');
+      if (customInput && customInput.value.trim()) {
+        finalEventType = customInput.value.trim();
+        try {
+           const customEvents = JSON.parse(localStorage.getItem('GENERAL_CUSTOM_EVENTS') || '[]');
+           if (!customEvents.includes(finalEventType)) {
+               customEvents.push(finalEventType);
+               localStorage.setItem('GENERAL_CUSTOM_EVENTS', JSON.stringify(customEvents));
+               
+               // Inject into select right now
+               const selectElement = document.getElementById('eventTypeSelect');
+               if (selectElement) {
+                   const options = Array.from(selectElement.options);
+                   const outrosIndex = options.findIndex(opt => opt.value === 'Outros');
+                   if (outrosIndex > -1) {
+                       const newOption = new Option(finalEventType, finalEventType);
+                       selectElement.insertBefore(newOption, selectElement.options[outrosIndex]);
+                   }
+               }
+           }
+        } catch(e) {}
+      }
+    }
+
     const newInc = appState.createIncident({
       title: formData.get('title'),
-      eventType: formData.get('eventType'),
+      eventType: finalEventType,
+
       trackingLink: formData.get('trackingLink'),
       road: 'Ver Link GPS',
       km: '',
@@ -5243,6 +5615,84 @@ Retorne APENAS o HTML da view, usando classes do Tailwind CSS. Não inclua \`\`\
     this.showToast('Redirecionando para o seu aplicativo de e-mail...', 'success');
     document.getElementById('help-modal').classList.add('hidden');
     textarea.value = '';
+  },
+
+  advancePlanStatus() {
+    if (!this.planStep) this.planStep = 1;
+    this.planStep++;
+    if (this.planStep > 5) {
+      this.planStep = 5;
+      this.showToast('O plano jǭ atingiu o estǭgio final.', 'info');
+      return;
+    }
+
+    // Update UI Step
+    const stepsText = ['Elaboração', 'Aprovado', 'Em Execução', 'A Caminho', 'A Avaliar'];
+    
+    // Reset all steps to default
+    for (let i = 1; i <= 5; i++) {
+       const icon = document.getElementById('step-icon-' + i);
+       const text = document.getElementById('step-text-' + i);
+       if (!icon || !text) continue;
+       
+       if (i < this.planStep) {
+         icon.className = 'w-10 h-10 rounded-full bg-emerald-500 text-white flex items-center justify-center border-4 border-slate-900 transition-colors shadow-lg shadow-emerald-500/20 font-bold';
+         text.className = 'text-[10px] font-bold text-emerald-500 uppercase tracking-wide';
+       } else if (i === this.planStep) {
+         icon.className = 'w-10 h-10 rounded-full bg-blue-500 text-white flex items-center justify-center border-4 border-slate-900 transition-colors shadow-lg shadow-blue-500/20 font-bold animate-pulse';
+         text.className = 'text-[10px] font-bold text-blue-400 uppercase tracking-wide';
+       } else {
+         icon.className = 'w-10 h-10 rounded-full bg-slate-800 text-slate-400 flex items-center justify-center border-4 border-slate-900 transition-colors';
+         text.className = 'text-[10px] font-bold text-slate-500 uppercase tracking-wide';
+       }
+    }
+    
+    const progressBar = document.getElementById('stepper-progress-bar');
+    if (progressBar) {
+       progressBar.style.width = ((this.planStep - 1) * 25) + '%';
+    }
+
+    // Log Activity
+    const logContainer = document.getElementById('plan-activity-log');
+    if (logContainer) {
+       // Remove empty message if exists
+       if (logContainer.querySelector('.italic')) logContainer.innerHTML = '';
+       
+       const d = new Date();
+       const timeStr = d.getHours().toString().padStart(2, '0') + ':' + d.getMinutes().toString().padStart(2, '0');
+       
+       let message = '';
+       let iconHtml = '';
+       
+       if (this.planStep === 2) {
+          message = 'O plano logístico foi aprovado formalmente. IA em prontidão.';
+          iconHtml = '<i data-lucide="check-circle" class="w-3.5 h-3.5 text-emerald-400"></i>';
+       } else if (this.planStep === 3) {
+          message = 'Plano entrou em execução. Monitoramento das rodovias iniciado.';
+          iconHtml = '<i data-lucide="play-circle" class="w-3.5 h-3.5 text-blue-400"></i>';
+       } else if (this.planStep === 4) {
+          message = 'Frota está a caminho do destino. Rastreamento ativo.';
+          iconHtml = '<i data-lucide="truck" class="w-3.5 h-3.5 text-amber-400"></i>';
+       } else if (this.planStep === 5) {
+          message = 'Etapa concluída. Aguardando avaliação pós-mortem das decisões tomadas.';
+          iconHtml = '<i data-lucide="star" class="w-3.5 h-3.5 text-purple-400"></i>';
+       }
+
+       const html = `
+         <div class="flex gap-3 text-xs items-start bg-slate-900/50 p-2 rounded border border-slate-800">
+           <div class="mt-0.5">${iconHtml}</div>
+           <div>
+             <span class="text-white font-bold block mb-0.5">${stepsText[this.planStep - 1]}</span>
+             <span class="text-slate-400">${message}</span>
+             <div class="text-[9px] text-slate-500 mt-1 font-mono">${timeStr} - Sistema Automático</div>
+           </div>
+         </div>
+       `;
+       logContainer.insertAdjacentHTML('afterbegin', html);
+       if (typeof lucide !== 'undefined') lucide.createIcons();
+    }
+    
+    this.showToast('Etapa avançada com sucesso', 'success');
   }
 };
 

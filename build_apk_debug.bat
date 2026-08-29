@@ -1,0 +1,5 @@
+@echo off
+set "JAVA_HOME=C:\Program Files\Android\Android Studio\jbr"
+cd /d "%~dp0android"
+call gradlew.bat assembleDebug --console=plain --warning-mode=none
+echo Exit code: %ERRORLEVEL%

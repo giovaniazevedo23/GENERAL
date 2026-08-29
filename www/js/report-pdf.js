@@ -25,7 +25,7 @@ const ReportPDFGenerator = {
     const isFreePlan = incident.customPlan ? true : false;
     const planIcon = isFreePlan ? '📝' : '🤖';
     const planTitle = isFreePlan ? 'Plano de Ação Tático (Estruturado)' : 'Parecer Técnico e Plano de Ação 5W2H da IA';
-    const parecerText = incident.parecerTecnico || 'Nenhum parecer técnico adicional foi anexado pelo gestor até o momento da emissão deste dossiê.';
+    const parecerText = incident.docsParecer || incident.parecerTecnico || 'Nenhum parecer técnico adicional foi anexado pelo gestor até o momento da emissão deste dossiê.';
 
     return `
       <div id="printable-dossier" class="bg-white text-slate-900 p-8 rounded-2xl shadow-xl max-w-4xl mx-auto border border-slate-200 font-sans leading-relaxed text-sm">
@@ -78,11 +78,11 @@ const ReportPDFGenerator = {
             </div>
             <div>
               <span class="block font-semibold text-slate-500">Condições Climáticas:</span>
-              <span class="font-bold text-slate-800">${document.getElementById('vistoria-clima')?.value || incident.weather.replace('_', ' ')}</span>
+              <span class="font-bold text-slate-800">${(incident.vistoria && incident.vistoria.clima) || incident.weather.replace('_', ' ')}</span>
             </div>
             <div>
               <span class="block font-semibold text-slate-500">Condição da Pista:</span>
-              <span class="font-bold text-slate-800">${document.getElementById('vistoria-pista')?.value || incident.roadCondition.replace('_', ' ')}</span>
+              <span class="font-bold text-slate-800">${(incident.vistoria && incident.vistoria.pista) || incident.roadCondition.replace('_', ' ')}</span>
             </div>
             <div>
               <span class="block font-semibold text-slate-500">Coordenadas GPS:</span>
@@ -97,7 +97,7 @@ const ReportPDFGenerator = {
           <div class="grid grid-cols-2 md:grid-cols-3 gap-3 text-xs bg-slate-50 p-3 rounded-lg border border-slate-200">
             <div>
               <span class="block font-semibold text-slate-500">Veículo / Condição:</span>
-              <span class="font-bold text-slate-800">${document.getElementById('vistoria-veiculo')?.value || incident.vehicleType}</span>
+              <span class="font-bold text-slate-800">${(incident.vistoria && incident.vistoria.veiculo) || incident.vehicleType}</span>
             </div>
             <div>
               <span class="block font-semibold text-slate-500">Placas / Frota:</span>
@@ -109,7 +109,7 @@ const ReportPDFGenerator = {
             </div>
             <div>
               <span class="block font-semibold text-slate-500">Estado do Motorista:</span>
-              <span class="font-bold text-slate-800">${document.getElementById('vistoria-condutor')?.value || incident.driverStatus.replace('_', ' ')}</span>
+              <span class="font-bold text-slate-800">${(incident.vistoria && incident.vistoria.condutor) || incident.driverStatus.replace('_', ' ')}</span>
             </div>
             <div>
               <span class="block font-semibold text-slate-500">Nota Fiscal / Manifesto:</span>
@@ -117,7 +117,7 @@ const ReportPDFGenerator = {
             </div>
             <div>
               <span class="block font-semibold text-slate-500">Lacre de Segurança:</span>
-              <span class="font-bold text-slate-800">${document.getElementById('vistoria-lacre')?.value || (incident.sealIntact ? 'Íntegro' : 'Violado')}</span>
+              <span class="font-bold text-slate-800">${(incident.vistoria && incident.vistoria.lacre) || (incident.sealIntact ? 'Íntegro' : 'Violado')}</span>
             </div>
             <div class="col-span-2">
               <span class="block font-semibold text-slate-500">Descrição da Mercadoria:</span>
@@ -253,9 +253,36 @@ const ReportPDFGenerator = {
         jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
       };
 
-      // Direct download method works on Web and modern WebViews
-      html2pdf().from(element).set(opt).save();
-      App.showToast('Download do PDF iniciado!');
+      // Hybrid approach: Capacitor Native Share or Web Download
+      if (window.Capacitor && window.Capacitor.isNativePlatform()) {
+          App.showToast('Gerando PDF nativo...', 'info');
+          html2pdf().from(element).set(opt).outputPdf('datauristring').then(async function(pdfBase64) {
+              try {
+                  const base64Data = pdfBase64.split(',')[1];
+                  const fileName = opt.filename;
+                  const result = await window.Capacitor.Plugins.Filesystem.writeFile({
+                      path: fileName,
+                      data: base64Data,
+                      directory: 'CACHE'
+                  });
+                  
+                  await window.Capacitor.Plugins.Share.share({
+                      title: 'Relatório PDF',
+                      text: 'Aqui está o seu PDF.',
+                      url: result.uri,
+                      dialogTitle: 'Salvar ou Compartilhar PDF'
+                  });
+                  
+                  App.showToast('PDF gerado e pronto para compartilhamento!', 'success');
+              } catch (e) {
+                  console.error("Erro Capacitor Filesystem/Share:", e);
+                  App.showToast('Erro ao exportar PDF no Android. Use a versão Web.', 'error');
+              }
+          });
+      } else {
+          html2pdf().from(element).set(opt).save();
+          App.showToast('Download do PDF iniciado!');
+      }
       
     } catch (err) {
       console.error('Erro ao gerar PDF:', err);
