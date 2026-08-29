@@ -1,6 +1,6 @@
 {
   "name": "general-app",
-  "version": "2.5.0",
+  "version": "4.3.0",
   "description": "GENERAL - Aplicativo Nativo de Gestão Logística, IA Preditiva e Resposta a Sinistros",
   "main": "main.js",
   "scripts": {
