@@ -100,6 +100,15 @@ const App = {
         this.updateTransshipmentSLATimer();
       }
     }, 1000);
+
+    this.updateDriverXPCounter();
+  },
+
+  updateDriverXPCounter() {
+    const xpCounter = document.getElementById('driver-xp-counter');
+    if (xpCounter) {
+      xpCounter.textContent = parseInt(localStorage.getItem('GENERAL_USER_XP') || '0', 10);
+    }
   },
 
   submitParecer() {
@@ -972,6 +981,8 @@ const App = {
       this.renderSavedPlansTab();
     } else if (tabId === 'copilot') {
       this.renderCopilotTab();
+    } else if (tabId === 'risk-dashboard') {
+      this.renderRiskDashboard();
     }
 
     if (typeof lucide !== 'undefined') {
@@ -5693,6 +5704,140 @@ Retorne APENAS o HTML da view, usando classes do Tailwind CSS. Não inclua \`\`\
     }
     
     this.showToast('Etapa avançada com sucesso', 'success');
+  },
+
+  // ==========================================
+  // MODULE: FEEDBACK & RISK MANAGEMENT
+  // ==========================================
+  submitFeedback() {
+    const route = document.getElementById('feedback-route')?.value || 'Rota Desconhecida';
+    const weather = document.getElementById('feedback-weather')?.value;
+    const road = document.getElementById('feedback-road')?.value;
+    const safety = document.getElementById('feedback-safety')?.value;
+    const support = document.getElementById('feedback-support')?.value;
+    const notes = document.getElementById('feedback-notes')?.value;
+
+    if (!route.trim()) {
+      this.showToast('Por favor, informe a rota finalizada.', 'error');
+      return;
+    }
+
+    const feedback = {
+      id: Date.now(),
+      route,
+      weather,
+      road,
+      safety,
+      support,
+      notes,
+      timestamp: new Date().toISOString()
+    };
+
+    let feedbacks = JSON.parse(localStorage.getItem('GENERAL_FEEDBACKS') || '[]');
+    feedbacks.push(feedback);
+    localStorage.setItem('GENERAL_FEEDBACKS', JSON.stringify(feedbacks));
+
+    // Gamification XP
+    let xp = parseInt(localStorage.getItem('GENERAL_USER_XP') || '0', 10);
+    xp += 50;
+    localStorage.setItem('GENERAL_USER_XP', xp);
+    
+    const xpCounter = document.getElementById('driver-xp-counter');
+    if (xpCounter) xpCounter.textContent = xp;
+
+    this.showToast('Avaliação enviada! Você ganhou +50 XP!', 'success');
+    
+    // Clear form
+    document.getElementById('feedback-route').value = '';
+    document.getElementById('feedback-notes').value = '';
+  },
+
+  submitQuickReport() {
+    const reportOptions = ['Acidente a frente', 'Queda de barreira', 'Pista escorregadia', 'Blitz/Manifestação'];
+    const randomReport = reportOptions[Math.floor(Math.random() * reportOptions.length)];
+    
+    const report = {
+      id: Date.now(),
+      type: randomReport,
+      location: 'Rodovia Simulada (KM ' + Math.floor(Math.random() * 500) + ')',
+      timestamp: new Date().toISOString()
+    };
+
+    let rapidReports = JSON.parse(localStorage.getItem('GENERAL_RAPID_REPORTS') || '[]');
+    rapidReports.push(report);
+    localStorage.setItem('GENERAL_RAPID_REPORTS', JSON.stringify(rapidReports));
+
+    this.showToast('Reporte rápido enviado! Gestor e motoristas notificados.', 'error');
+    if (this.currentTab === 'risk-dashboard') {
+      this.renderRiskDashboard();
+    }
+  },
+
+  calculateRiskScore(feedbacks, rapidReports) {
+    // Score base 20 (Histórico base transportadora)
+    let score = 20;
+    
+    // Penalidade por avaliações ruins recentes
+    const badRoad = feedbacks.filter(f => f.road === 'Péssima').length;
+    const badSafety = feedbacks.filter(f => f.safety === 'Perigoso').length;
+    score += (badRoad * 10) + (badSafety * 15);
+    
+    // Penalidade por reportes rápidos
+    score += (rapidReports.length * 20);
+
+    // Bounding 0 - 100
+    if (score > 100) score = 100;
+    return score;
+  },
+
+  renderRiskDashboard() {
+    const feedbacks = JSON.parse(localStorage.getItem('GENERAL_FEEDBACKS') || '[]');
+    const rapidReports = JSON.parse(localStorage.getItem('GENERAL_RAPID_REPORTS') || '[]');
+    
+    // Alerta de Risco Crítico (>1 reportes rápidos em 24h)
+    const alertContainer = document.getElementById('risk-alert-container');
+    if (alertContainer) {
+      if (rapidReports.length >= 2) {
+        alertContainer.classList.remove('hidden');
+        alertContainer.classList.add('flex');
+      } else {
+        alertContainer.classList.add('hidden');
+        alertContainer.classList.remove('flex');
+      }
+    }
+
+    // Render Rapid Reports
+    const reportsList = document.getElementById('risk-rapid-reports');
+    if (reportsList) {
+      reportsList.innerHTML = rapidReports.length === 0 ? '<p class="text-xs text-slate-500">Nenhum reporte recente.</p>' : rapidReports.slice(-5).reverse().map(r => `
+        <div class="bg-slate-950 p-3 rounded-xl border border-rose-900/50 flex flex-col">
+          <span class="text-xs font-bold text-rose-400 mb-1">PERIGO: ${r.type}</span>
+          <span class="text-[10px] text-slate-400">Local: ${r.location}</span>
+          <span class="text-[9px] text-slate-500 mt-1">${new Date(r.timestamp).toLocaleString('pt-BR')}</span>
+        </div>
+      `).join('');
+    }
+
+    // Render Risk Score Baseado em feedbacks
+    const scoreList = document.getElementById('risk-scores-list');
+    if (scoreList) {
+      const score = this.calculateRiskScore(feedbacks, rapidReports);
+      const riskLevel = score < 40 ? 'Baixo' : score < 75 ? 'Médio' : 'Crítico';
+      const riskColor = score < 40 ? 'emerald' : score < 75 ? 'amber' : 'rose';
+      
+      scoreList.innerHTML = `
+        <div class="bg-slate-950 p-4 rounded-xl border border-slate-800 flex items-center justify-between">
+          <div>
+            <span class="text-xs font-bold text-white block mb-1">Rota Ativa (Simulação)</span>
+            <span class="text-[10px] text-slate-400">Score calculado por IA + Feedbacks</span>
+          </div>
+          <div class="flex flex-col items-end">
+            <span class="text-xl font-black text-${riskColor}-400">${score}/100</span>
+            <span class="text-[9px] uppercase font-bold text-${riskColor}-500 bg-${riskColor}-500/10 px-2 py-0.5 rounded mt-1">Risco ${riskLevel}</span>
+          </div>
+        </div>
+      `;
+    }
   }
 };
 
