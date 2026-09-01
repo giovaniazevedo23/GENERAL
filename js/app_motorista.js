@@ -474,29 +474,6 @@ const App = {
   },
 
   async syncFromFirebase() {
-      if (window.db) {
-          window.db.collection('route_evaluations').onSnapshot(snapshot => {
-              appState.routeEvaluations = appState.routeEvaluations || [];
-              let changed = false;
-              snapshot.docChanges().forEach(change => {
-                  if (change.type === 'added' || change.type === 'modified') {
-                      const data = change.doc.data();
-                      const existingIndex = appState.routeEvaluations.findIndex(e => e.id === data.id);
-                      if (existingIndex >= 0) appState.routeEvaluations[existingIndex] = data;
-                      else appState.routeEvaluations.push(data);
-                      changed = true;
-                  }
-              });
-              if (changed) {
-                  localStorage.setItem('general_route_evaluations', JSON.stringify(appState.routeEvaluations));
-                  // Optionally trigger a re-render of the map or monitoring view
-                  if (window.App && typeof window.App.renderMonitoringTab === 'function') {
-                      window.App.renderMonitoringTab();
-                  }
-              }
-          });
-      }
-
     if (!window.db || !appState.currentUser || !appState.currentUser.id) return;
     try {
       const userId = appState.currentUser.id;
@@ -546,6 +523,54 @@ const App = {
   },
 
   async checkAuth() {
+      const overlay = document.getElementById('login-overlay');
+      if (appState.currentUser) {
+        if (overlay) overlay.style.opacity = '0';
+        setTimeout(() => { if (overlay) overlay.classList.add('hidden'); }, 300);
+        this.updateProfileUI();
+        this.loadPlansForCompany(appState.currentUser.company);
+        this.switchTab('monitoring'); // Force monitoramento tab
+      } else {
+        if (overlay) {
+            overlay.classList.remove('hidden');
+            overlay.style.opacity = '1';
+            this.loadCompanies();
+        }
+      }
+    },
+    
+    async loadCompanies() {
+        const select = document.getElementById('motorista-company');
+        if (!select || !window.db) return;
+        
+        try {
+            const snap = await window.db.collection('companies').get();
+            if (snap.empty) {
+                select.innerHTML = '<option value="">Nenhuma empresa cadastrada pelo Gestor ainda.</option>';
+                return;
+            }
+            select.innerHTML = '<option value="">Selecione a empresa...</option>';
+            snap.forEach(doc => {
+                select.innerHTML += `<option value="${doc.id}">${doc.id}</option>`;
+            });
+        } catch (e) {
+            console.error("Erro ao carregar empresas:", e);
+        }
+    },
+    
+    async loadPlansForCompany(companyName) {
+        if (!window.db) return;
+        try {
+            const snap = await window.db.collection('saved_plans').where('approvedByCompany', '==', companyName).get();
+            appState.savedPlans = [];
+            snap.forEach(doc => appState.savedPlans.push(doc.data()));
+            this.renderMonitoringTab(); // or whatever renders the plan selection for monitoring
+            this.showToast('Planos da empresa carregados.');
+        } catch(e) {
+            console.error("Erro ao carregar planos", e);
+        }
+    },
+
     const userJson = localStorage.getItem('general_user');
     if (userJson) {
       appState.currentUser = JSON.parse(userJson);
@@ -823,99 +848,20 @@ const App = {
   },
 
   login() {
-    const id = document.getElementById('login-id').value;
-    if (!id) {
-        this.showToast('Preencha o ID do Usuário!');
-        return;
-    }
-    
-    // Obter banco de usuários ou criar
-    let usersDb = JSON.parse(localStorage.getItem('general_users_db') || '{}');
-
-    if (this.loginMode === 'login') {
-        if (usersDb[id]) {
-            appState.currentUser = usersDb[id];
-            localStorage.setItem('general_user', JSON.stringify(appState.currentUser));
-            this.checkAuth();
-        } else {
-            const legacyUserJson = localStorage.getItem('general_user');
-            if (legacyUserJson) {
-                const legacyUser = JSON.parse(legacyUserJson);
-                usersDb[id] = legacyUser;
-                appState.currentUser = legacyUser;
-                localStorage.setItem('general_users_db', JSON.stringify(usersDb));
-                this.checkAuth();
-            } else {
-                // Auto-cadastro rápido para evitar bloqueio durante os testes
-                const defaultUser = { id: id, name: 'Usuário Teste (' + id + ')', company: 'Empresa Teste', role: 'Gestor', provider: 'manual' };
-                usersDb[id] = defaultUser;
-                appState.currentUser = defaultUser;
-                localStorage.setItem('general_users_db', JSON.stringify(usersDb));
-                localStorage.setItem('general_user', JSON.stringify(defaultUser));
-                this.showToast('Usuário não encontrado. Autocadastro rápido realizado para testes.');
-                this.checkAuth();
-            }
-        }
-    } else {
-        const name = document.getElementById('login-name').value;
-        const company = document.getElementById('login-company').value;
-        const role = document.getElementById('login-role').value;
-        
-        if (name && company && role) {
-          appState.currentUser = { id, name, company, role, provider: 'manual' };
-          usersDb[id] = appState.currentUser;
-          localStorage.setItem('general_users_db', JSON.stringify(usersDb));
-          localStorage.setItem('general_user', JSON.stringify(appState.currentUser));
-          this.checkAuth();
-        } else {
-          this.showToast('Por favor, preencha todos os campos!');
-        }
-    }
-  },
-
-  async loginWithGoogle() {
-    try {
-      if (!window.Capacitor || !window.Capacitor.Plugins.GoogleAuth) {
-        this.showToast('Plugin GoogleAuth não encontrado ou rodando fora do Capacitor.');
-        return;
+      const name = document.getElementById('motorista-name') ? document.getElementById('motorista-name').value : '';
+      const company = document.getElementById('motorista-company') ? document.getElementById('motorista-company').value : '';
+      
+      if (!name || !company) {
+          this.showToast('Preencha seu nome e selecione a empresa!');
+          return;
       }
       
-      this.showToast('Abrindo contas do Google...');
-      const { GoogleAuth } = window.Capacitor.Plugins;
-      await GoogleAuth.initialize({
-        clientId: '148525185065-bqmkog5bfdj7ed9gol94d3d3mhfr6i8v.apps.googleusercontent.com',
-        scopes: ['profile', 'email'],
-        grantOfflineAccess: true,
-      });
-
-      const user = await GoogleAuth.signIn();
-      console.log('Google User Data:', user);
-
-      const googleUser = {
-        id: 'GOOG-' + (user.id || user.uid || Math.floor(Math.random() * 900000 + 100000)),
-        name: user.name || user.givenName || user.email.split('@')[0],
-        company: 'Conta Google Verificada',
-        role: 'Usuário (Google)',
-        email: user.email,
-        provider: 'google',
-        photo: user.imageUrl || null
-      };
-
-      appState.currentUser = googleUser;
-      localStorage.setItem('general_user', JSON.stringify(googleUser));
+      const id = 'MOT-' + Math.floor(Math.random() * 90000 + 10000);
+      appState.currentUser = { id, name, company, role: 'Motorista', provider: 'manual' };
+      localStorage.setItem('general_user', JSON.stringify(appState.currentUser));
       this.checkAuth();
-      this.showToast(`ðŸ”‘ Bem-vindo(a) via Google, ${googleUser.name}!`);
-
-    } catch (error) {
-      console.error('Erro no Google Sign-In:', error);
-      if (error.type === 'userCancel' || String(error).includes('12501')) {
-        this.showToast('Login cancelado pelo usuário.');
-      } else {
-        this.showToast('Erro ao logar com o Google. Tente novamente.');
-      }
-    }
+      this.showToast(`Bem-vindo, ${name}!`);
   },
-
   logout() {
     if (confirm('Deseja realmente sair da sua conta no GENERAL?')) {
       localStorage.removeItem('general_user');
@@ -4598,7 +4544,11 @@ Retorne APENAS o HTML da view, usando classes do Tailwind CSS. Não inclua \`\`\
     if (document.getElementById('profile-email')) document.getElementById('profile-email').value = appState.currentUser.email || '';
     if (document.getElementById('profile-phone')) document.getElementById('profile-phone').value = appState.currentUser.phone || '';
     
-    const showCopilotCb = document.getElementById('profile-show-copilot');
+    const showCopilotCb = 
+    const btnLoginMot = document.getElementById('btn-action-login-motorista');
+    if (btnLoginMot) btnLoginMot.addEventListener('click', () => this.login());
+    
+    document.getElementById('profile-show-copilot');
     if (showCopilotCb) {
       showCopilotCb.checked = localStorage.getItem('disable_copilot_helper') !== 'true';
     }
@@ -4670,17 +4620,17 @@ Retorne APENAS o HTML da view, usando classes do Tailwind CSS. Não inclua \`\`\
     if (newName && newCompany && newRole) {
       appState.currentUser.name = newName;
       appState.currentUser.company = newCompany;
-        if (window.db && newCompany) {
-            window.db.collection('companies').doc(newCompany).set({ name: newCompany }).catch(console.error);
-        }
-
       appState.currentUser.role = newRole;
       appState.currentUser.email = newEmail;
       appState.currentUser.phone = newPhone;
       
       localStorage.setItem('general_user', JSON.stringify(appState.currentUser));
       
-      const showCopilotCb = document.getElementById('profile-show-copilot');
+      const showCopilotCb = 
+    const btnLoginMot = document.getElementById('btn-action-login-motorista');
+    if (btnLoginMot) btnLoginMot.addEventListener('click', () => this.login());
+    
+    document.getElementById('profile-show-copilot');
       if (showCopilotCb) {
         if (!showCopilotCb.checked) {
           localStorage.setItem('disable_copilot_helper', 'true');
