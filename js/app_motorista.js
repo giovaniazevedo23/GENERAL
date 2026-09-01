@@ -544,17 +544,28 @@ const App = {
         if (!select || !window.db) return;
         
         try {
-            const snap = await window.db.collection('companies').get();
-            if (snap.empty) {
-                select.innerHTML = '<option value="">Nenhuma empresa cadastrada pelo Gestor ainda.</option>';
+            // Buscando de saved_plans para evitar problemas de permissões em novas coleções
+            const snap = await window.db.collection('saved_plans').get();
+            const companies = new Set();
+            snap.forEach(doc => {
+                const data = doc.data();
+                if (data.approvedByCompany) {
+                    companies.add(data.approvedByCompany);
+                }
+            });
+            
+            if (companies.size === 0) {
+                select.innerHTML = '<option value="">Nenhum plano com empresa cadastrado.</option>';
                 return;
             }
+            
             select.innerHTML = '<option value="">Selecione a empresa...</option>';
-            snap.forEach(doc => {
-                select.innerHTML += `<option value="${doc.id}">${doc.id}</option>`;
+            companies.forEach(company => {
+                select.innerHTML += `<option value="${company}">${company}</option>`;
             });
         } catch (e) {
             console.error("Erro ao carregar empresas:", e);
+            select.innerHTML = '<option value="">Erro de permissão. Tente novamente.</option>';
         }
     },
     
