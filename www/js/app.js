@@ -878,44 +878,50 @@ const App = {
 
   async loginWithGoogle() {
     try {
-      if (!window.Capacitor || !window.Capacitor.Plugins.GoogleAuth) {
-        this.showToast('Plugin GoogleAuth não encontrado ou rodando fora do Capacitor.');
-        return;
-      }
-      
       this.showToast('Abrindo contas do Google...');
-      const { GoogleAuth } = window.Capacitor.Plugins;
-      await GoogleAuth.initialize({
-        clientId: '148525185065-bqmkog5bfdj7ed9gol94d3d3mhfr6i8v.apps.googleusercontent.com',
-        scopes: ['profile', 'email'],
-        grantOfflineAccess: true,
-      });
-
-      const user = await GoogleAuth.signIn();
-      console.log('Google User Data:', user);
-
+      const provider = new firebase.auth.GoogleAuthProvider();
+      const result = await firebase.auth().signInWithPopup(provider);
+      const user = result.user;
+      
       const googleUser = {
-        id: 'GOOG-' + (user.id || user.uid || Math.floor(Math.random() * 900000 + 100000)),
-        name: user.name || user.givenName || user.email.split('@')[0],
-        company: 'Conta Google Verificada',
-        role: 'Usuário (Google)',
+        id: 'GOOG-' + (user.uid),
+        name: user.displayName || user.email.split('@')[0],
         email: user.email,
         provider: 'google',
-        photo: user.imageUrl || null
+        photo: user.photoURL || null
       };
 
-      appState.currentUser = googleUser;
-      localStorage.setItem('general_user', JSON.stringify(googleUser));
-      this.checkAuth();
-      this.showToast(`ðŸ”‘ Bem-vindo(a) via Google, ${googleUser.name}!`);
-
-    } catch (error) {
-      console.error('Erro no Google Sign-In:', error);
-      if (error.type === 'userCancel' || String(error).includes('12501')) {
-        this.showToast('Login cancelado pelo usuário.');
-      } else {
-        this.showToast('Erro ao logar com o Google. Tente novamente.');
+      // Check if user exists in Firestore
+      const docSnap = await window.db.collection('users').doc(user.email).get();
+      if (docSnap.exists) {
+          const data = docSnap.data();
+          if (data.companyCnpj) {
+              googleUser.company = data.company;
+              googleUser.companyCnpj = data.companyCnpj;
+              googleUser.role = data.role;
+              
+              appState.currentUser = googleUser;
+              localStorage.setItem('general_user', JSON.stringify(googleUser));
+              this.checkAuth();
+              this.showToast(`🔑 Bem-vindo(a) de volta, ${googleUser.name}!`);
+              return;
+          }
       }
+
+      // If not, ask for extra info
+      window.tempGoogleUser = googleUser;
+      const modal = document.getElementById('google-extra-modal');
+      if (modal) {
+         modal.classList.remove('hidden');
+         if(window.lucide) window.lucide.createIcons();
+      } else {
+         appState.currentUser = googleUser;
+         localStorage.setItem('general_user', JSON.stringify(googleUser));
+         this.checkAuth();
+      }
+    } catch (e) {
+      console.error(e);
+      this.showToast('Erro ao logar com Google.');
     }
   },
 
@@ -5869,9 +5875,38 @@ Retorne APENAS o HTML da view, usando classes do Tailwind CSS. Não inclua \`\`\
       `;
     }
   }
+,
+  submitGoogleExtraInfo() {
+    const company = document.getElementById('google-extra-company')?.value.trim();
+    const cnpj = document.getElementById('google-extra-cnpj')?.value.trim();
+    const role = document.getElementById('google-extra-role')?.value.trim();
+    
+    if (!company || !cnpj || !role) {
+      this.showToast('Por favor, preencha todos os campos da empresa.');
+      return;
+    }
+    
+    if (window.tempGoogleUser) {
+       window.tempGoogleUser.company = company;
+       window.tempGoogleUser.companyCnpj = cnpj;
+       window.tempGoogleUser.role = role;
+       
+       appState.currentUser = window.tempGoogleUser;
+       localStorage.setItem('general_user', JSON.stringify(window.tempGoogleUser));
+       
+       // Save to Firestore so Motorista APK can see it
+       if (window.db) {
+           window.db.collection('users').doc(window.tempGoogleUser.email).set(window.tempGoogleUser)
+             .catch(e => console.error('Erro ao salvar no Firestore:', e));
+       }
+       
+       document.getElementById('google-extra-modal').classList.add('hidden');
+       this.checkAuth();
+       this.showToast(`ðŸ”‘ Bem-vindo(a) via Google, ${window.tempGoogleUser.name}!`);
+    }
+  },
 };
 
 window.addEventListener('DOMContentLoaded', () => {
   App.init();
 });
-

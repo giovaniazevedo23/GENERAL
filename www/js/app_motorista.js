@@ -561,7 +561,8 @@ const App = {
         }
     },
 
-    const userJson = localStorage.getItem('general_user');
+    async checkAuth() {
+      const userJson = localStorage.getItem('general_user');
     if (userJson) {
       appState.currentUser = JSON.parse(userJson);
       document.getElementById('login-overlay').classList.add('hidden');
@@ -4548,11 +4549,8 @@ Retorne APENAS o HTML da view, usando classes do Tailwind CSS. Não inclua \`\`\
     if (document.getElementById('profile-email')) document.getElementById('profile-email').value = appState.currentUser.email || '';
     if (document.getElementById('profile-phone')) document.getElementById('profile-phone').value = appState.currentUser.phone || '';
     
-    const showCopilotCb = 
-    const btnLoginMot = document.getElementById('btn-action-login-motorista');
-    if (btnLoginMot) btnLoginMot.addEventListener('click', () => this.login());
+    const showCopilotCb = document.getElementById('profile-show-copilot');
     
-    document.getElementById('profile-show-copilot');
     if (showCopilotCb) {
       showCopilotCb.checked = localStorage.getItem('disable_copilot_helper') !== 'true';
     }
@@ -4630,11 +4628,7 @@ Retorne APENAS o HTML da view, usando classes do Tailwind CSS. Não inclua \`\`\
       
       localStorage.setItem('general_user', JSON.stringify(appState.currentUser));
       
-      const showCopilotCb = 
-    const btnLoginMot = document.getElementById('btn-action-login-motorista');
-    if (btnLoginMot) btnLoginMot.addEventListener('click', () => this.login());
-    
-    document.getElementById('profile-show-copilot');
+      const showCopilotCb = document.getElementById('profile-show-copilot');
       if (showCopilotCb) {
         if (!showCopilotCb.checked) {
           localStorage.setItem('disable_copilot_helper', 'true');
@@ -5819,11 +5813,7 @@ Retorne APENAS o HTML da view, usando classes do Tailwind CSS. Não inclua \`\`\
         </div>
       `;
     }
-  }
-};
-
-window.addEventListener('DOMContentLoaded', () => {
-  App.init();
+  },
 
   loadTacticalMonitoring() {
     const selector = document.getElementById('tactical-plan-selector');
