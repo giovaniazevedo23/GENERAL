@@ -881,6 +881,28 @@ const App = {
       if (!window.Capacitor || !window.Capacitor.Plugins.GoogleAuth) {
         // Fallback for Web if Plugin is missing but we want to simulate
         console.warn('Plugin GoogleAuth missing. Simulando no Web.');
+        
+        const mockGoogleUser = {
+          id: 'GOOG-WEB-' + Math.floor(Math.random() * 900000 + 100000),
+          name: 'Usuário Web Google',
+          company: 'Conta Google Verificada',
+          role: 'Usuário (Google)',
+          email: 'usuario.web@gmail.com',
+          provider: 'google',
+          photo: null
+        };
+        
+        window.tempGoogleUser = mockGoogleUser;
+        const modal = document.getElementById('google-extra-modal');
+        if (modal) {
+           modal.classList.remove('hidden');
+           if(window.lucide) window.lucide.createIcons();
+        } else {
+           appState.currentUser = mockGoogleUser;
+           localStorage.setItem('general_user', JSON.stringify(mockGoogleUser));
+           this.checkAuth();
+        }
+        return;
       }
       
       this.showToast('Abrindo contas do Google...');
@@ -904,7 +926,7 @@ const App = {
         photo: user.imageUrl || null
       };
 
-            // Guardar temporariamente e pedir dados extras
+      // Guardar temporariamente e pedir dados extras
       window.tempGoogleUser = googleUser;
       
       // Mostrar Modal
@@ -918,9 +940,9 @@ const App = {
          localStorage.setItem('general_user', JSON.stringify(googleUser));
          this.checkAuth();
       }
-      } else {
-        this.showToast('Erro ao logar com o Google. Tente novamente.');
-      }
+    } catch (e) {
+      console.error(e);
+      this.showToast('Erro ao logar com Google.');
     }
   },
 
