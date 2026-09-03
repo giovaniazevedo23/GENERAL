@@ -140,7 +140,8 @@ const App = {
 
   // CATÁLOGO DE CARGAS
   initCargoCatalog() {
-    let catalog = JSON.parse(localStorage.getItem('GENERAL_CARGO_CATALOG') || 'null');
+    const cnpj = (appState.currentUser && appState.currentUser.companyCnpj) ? appState.currentUser.companyCnpj : 'default';
+    let catalog = JSON.parse(localStorage.getItem(`GENERAL_CARGO_CATALOG_${cnpj}`) || 'null');
     if (!catalog) {
       catalog = [
         { id: 1, name: 'Caixas de Eletrônicos', category: 'Cargas Gerais', risk: 20 },
@@ -149,7 +150,7 @@ const App = {
         { id: 4, name: 'Turbina Eólica', category: 'Carga Indivisível', risk: 60 },
         { id: 5, name: 'Soja a Granel', category: 'Carga a Granéis', risk: 70 }
       ];
-      localStorage.setItem('GENERAL_CARGO_CATALOG', JSON.stringify(catalog));
+      localStorage.setItem(`GENERAL_CARGO_CATALOG_${(appState.currentUser && appState.currentUser.companyCnpj) ? appState.currentUser.companyCnpj : 'default'}`, JSON.stringify(catalog));
     }
     this.cargoCatalog = catalog;
   },
@@ -213,7 +214,8 @@ const App = {
     
     const newCargo = { id: Date.now(), name, category, risk };
     this.cargoCatalog.push(newCargo);
-    localStorage.setItem('GENERAL_CARGO_CATALOG', JSON.stringify(this.cargoCatalog));
+    const cnpj = (appState.currentUser && appState.currentUser.companyCnpj) ? appState.currentUser.companyCnpj : 'default';
+    localStorage.setItem(`GENERAL_CARGO_CATALOG_${cnpj}`, JSON.stringify(this.cargoCatalog));
     
     document.getElementById('add-cargo-modal').classList.add('hidden');
     this.showToast('Carga adicionada ao catálogo!', 'success');
@@ -223,7 +225,8 @@ const App = {
   deleteCargo(id) {
     if (confirm('Deseja realmente remover esta carga?')) {
       this.cargoCatalog = this.cargoCatalog.filter(c => c.id !== id);
-      localStorage.setItem('GENERAL_CARGO_CATALOG', JSON.stringify(this.cargoCatalog));
+      const cnpj = (appState.currentUser && appState.currentUser.companyCnpj) ? appState.currentUser.companyCnpj : 'default';
+    localStorage.setItem(`GENERAL_CARGO_CATALOG_${cnpj}`, JSON.stringify(this.cargoCatalog));
       this.renderCargoCatalog();
     }
   },
@@ -862,7 +865,7 @@ const App = {
         const role = document.getElementById('login-role').value;
         
         if (name && company && role) {
-          appState.currentUser = { id, name, company, role, provider: 'manual' };
+          appState.currentUser = { id, name, company, role, companyCnpj: cnpj, provider: 'manual' };
           usersDb[id] = appState.currentUser;
           localStorage.setItem('general_users_db', JSON.stringify(usersDb));
           localStorage.setItem('general_user', JSON.stringify(appState.currentUser));
@@ -876,8 +879,8 @@ const App = {
   async loginWithGoogle() {
     try {
       if (!window.Capacitor || !window.Capacitor.Plugins.GoogleAuth) {
-        this.showToast('Plugin GoogleAuth não encontrado ou rodando fora do Capacitor.');
-        return;
+        // Fallback for Web if Plugin is missing but we want to simulate
+        console.warn('Plugin GoogleAuth missing. Simulando no Web.');
       }
       
       this.showToast('Abrindo contas do Google...');
@@ -901,15 +904,20 @@ const App = {
         photo: user.imageUrl || null
       };
 
-      appState.currentUser = googleUser;
-      localStorage.setItem('general_user', JSON.stringify(googleUser));
-      this.checkAuth();
-      this.showToast(`ðŸ”‘ Bem-vindo(a) via Google, ${googleUser.name}!`);
-
-    } catch (error) {
-      console.error('Erro no Google Sign-In:', error);
-      if (error.type === 'userCancel' || String(error).includes('12501')) {
-        this.showToast('Login cancelado pelo usuário.');
+            // Guardar temporariamente e pedir dados extras
+      window.tempGoogleUser = googleUser;
+      
+      // Mostrar Modal
+      const modal = document.getElementById('google-extra-modal');
+      if (modal) {
+         modal.classList.remove('hidden');
+         if(window.lucide) window.lucide.createIcons();
+      } else {
+         // Fallback if modal doesn't exist
+         appState.currentUser = googleUser;
+         localStorage.setItem('general_user', JSON.stringify(googleUser));
+         this.checkAuth();
+      }
       } else {
         this.showToast('Erro ao logar com o Google. Tente novamente.');
       }
@@ -5870,5 +5878,29 @@ Retorne APENAS o HTML da view, usando classes do Tailwind CSS. Não inclua \`\`\
 
 window.addEventListener('DOMContentLoaded', () => {
   App.init();
-});
 
+  submitGoogleExtraInfo() {
+    const company = document.getElementById('google-extra-company')?.value.trim();
+    const cnpj = document.getElementById('google-extra-cnpj')?.value.trim();
+    const role = document.getElementById('google-extra-role')?.value.trim();
+    
+    if (!company || !cnpj || !role) {
+      this.showToast('Por favor, preencha todos os campos da empresa.');
+      return;
+    }
+    
+    if (window.tempGoogleUser) {
+       window.tempGoogleUser.company = company;
+       window.tempGoogleUser.companyCnpj = cnpj;
+       window.tempGoogleUser.role = role;
+       
+       appState.currentUser = window.tempGoogleUser;
+       localStorage.setItem('general_user', JSON.stringify(window.tempGoogleUser));
+       
+       document.getElementById('google-extra-modal').classList.add('hidden');
+       this.checkAuth();
+       this.showToast(`ðŸ”‘ Bem-vindo(a) via Google, ${window.tempGoogleUser.name}!`);
+    }
+  },
+
+}

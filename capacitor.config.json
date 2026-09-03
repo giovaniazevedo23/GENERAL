@@ -1,28 +1,30 @@
 {
-  "appId": "com.general.logistica",
-  "appName": "GENERAL",
-  "webDir": "www",
-  "server": {
-    "androidScheme": "https",
-    "allowNavigation": [
-      "*.api.aws",
-      "router.project-osrm.org",
-      "nominatim.openstreetmap.org",
-      "brasilapi.com.br"
-    ]
-  },
-  "plugins": {
-    "SplashScreen": {
-      "launchShowDuration": 2000,
-      "backgroundColor": "#080c14",
-      "showSpinner": false
-    },
-    "GoogleAuth": {
-      "scopes": ["profile", "email"],
-      "clientId": "148525185065-bqmkog5bfdj7ed9gol94d3d3mhfr6i8v.apps.googleusercontent.com",
-      "serverClientId": "148525185065-bqmkog5bfdj7ed9gol94d3d3mhfr6i8v.apps.googleusercontent.com",
-      "forceCodeForRefreshToken": true
-    }
-  }
+    "appId":  "com.general.logistica",
+    "appName":  "GENERAL",
+    "webDir":  "www",
+    "server":  {
+                   "androidScheme":  "https",
+                   "allowNavigation":  [
+                                           "*.api.aws",
+                                           "router.project-osrm.org",
+                                           "nominatim.openstreetmap.org",
+                                           "brasilapi.com.br"
+                                       ]
+               },
+    "plugins":  {
+                    "SplashScreen":  {
+                                         "launchShowDuration":  2000,
+                                         "backgroundColor":  "#080c14",
+                                         "showSpinner":  false
+                                     },
+                    "GoogleAuth":  {
+                                       "scopes":  [
+                                                      "profile",
+                                                      "email"
+                                                  ],
+                                       "clientId":  "148525185065-bqmkog5bfdj7ed9gol94d3d3mhfr6i8v.apps.googleusercontent.com",
+                                       "serverClientId":  "148525185065-bqmkog5bfdj7ed9gol94d3d3mhfr6i8v.apps.googleusercontent.com",
+                                       "forceCodeForRefreshToken":  true
+                                   }
+                }
 }
-

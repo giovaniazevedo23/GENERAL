@@ -140,7 +140,8 @@ const App = {
 
   // CATÁLOGO DE CARGAS
   initCargoCatalog() {
-    let catalog = JSON.parse(localStorage.getItem('GENERAL_CARGO_CATALOG') || 'null');
+    const cnpj = (appState.currentUser && appState.currentUser.companyCnpj) ? appState.currentUser.companyCnpj : 'default';
+    let catalog = JSON.parse(localStorage.getItem(`GENERAL_CARGO_CATALOG_${cnpj}`) || 'null');
     if (!catalog) {
       catalog = [
         { id: 1, name: 'Caixas de Eletrônicos', category: 'Cargas Gerais', risk: 20 },
@@ -149,7 +150,7 @@ const App = {
         { id: 4, name: 'Turbina Eólica', category: 'Carga Indivisível', risk: 60 },
         { id: 5, name: 'Soja a Granel', category: 'Carga a Granéis', risk: 70 }
       ];
-      localStorage.setItem('GENERAL_CARGO_CATALOG', JSON.stringify(catalog));
+      localStorage.setItem(`GENERAL_CARGO_CATALOG_${(appState.currentUser && appState.currentUser.companyCnpj) ? appState.currentUser.companyCnpj : 'default'}`, JSON.stringify(catalog));
     }
     this.cargoCatalog = catalog;
   },
@@ -213,7 +214,8 @@ const App = {
     
     const newCargo = { id: Date.now(), name, category, risk };
     this.cargoCatalog.push(newCargo);
-    localStorage.setItem('GENERAL_CARGO_CATALOG', JSON.stringify(this.cargoCatalog));
+    const cnpj = (appState.currentUser && appState.currentUser.companyCnpj) ? appState.currentUser.companyCnpj : 'default';
+    localStorage.setItem(`GENERAL_CARGO_CATALOG_${cnpj}`, JSON.stringify(this.cargoCatalog));
     
     document.getElementById('add-cargo-modal').classList.add('hidden');
     this.showToast('Carga adicionada ao catálogo!', 'success');
@@ -223,7 +225,8 @@ const App = {
   deleteCargo(id) {
     if (confirm('Deseja realmente remover esta carga?')) {
       this.cargoCatalog = this.cargoCatalog.filter(c => c.id !== id);
-      localStorage.setItem('GENERAL_CARGO_CATALOG', JSON.stringify(this.cargoCatalog));
+      const cnpj = (appState.currentUser && appState.currentUser.companyCnpj) ? appState.currentUser.companyCnpj : 'default';
+    localStorage.setItem(`GENERAL_CARGO_CATALOG_${cnpj}`, JSON.stringify(this.cargoCatalog));
       this.renderCargoCatalog();
     }
   },
@@ -474,6 +477,29 @@ const App = {
   },
 
   async syncFromFirebase() {
+      if (window.db) {
+          window.db.collection('route_evaluations').onSnapshot(snapshot => {
+              appState.routeEvaluations = appState.routeEvaluations || [];
+              let changed = false;
+              snapshot.docChanges().forEach(change => {
+                  if (change.type === 'added' || change.type === 'modified') {
+                      const data = change.doc.data();
+                      const existingIndex = appState.routeEvaluations.findIndex(e => e.id === data.id);
+                      if (existingIndex >= 0) appState.routeEvaluations[existingIndex] = data;
+                      else appState.routeEvaluations.push(data);
+                      changed = true;
+                  }
+              });
+              if (changed) {
+                  localStorage.setItem('general_route_evaluations', JSON.stringify(appState.routeEvaluations));
+                  // Optionally trigger a re-render of the map or monitoring view
+                  if (window.App && typeof window.App.renderMonitoringTab === 'function') {
+                      window.App.renderMonitoringTab();
+                  }
+              }
+          });
+      }
+
     if (!window.db || !appState.currentUser || !appState.currentUser.id) return;
     try {
       const userId = appState.currentUser.id;
@@ -839,7 +865,7 @@ const App = {
         const role = document.getElementById('login-role').value;
         
         if (name && company && role) {
-          appState.currentUser = { id, name, company, role, provider: 'manual' };
+          appState.currentUser = { id, name, company, role, companyCnpj: cnpj, provider: 'manual' };
           usersDb[id] = appState.currentUser;
           localStorage.setItem('general_users_db', JSON.stringify(usersDb));
           localStorage.setItem('general_user', JSON.stringify(appState.currentUser));
@@ -4647,6 +4673,10 @@ Retorne APENAS o HTML da view, usando classes do Tailwind CSS. Não inclua \`\`\
     if (newName && newCompany && newRole) {
       appState.currentUser.name = newName;
       appState.currentUser.company = newCompany;
+        if (window.db && newCompany) {
+            window.db.collection('companies').doc(newCompany).set({ name: newCompany }).catch(console.error);
+        }
+
       appState.currentUser.role = newRole;
       appState.currentUser.email = newEmail;
       appState.currentUser.phone = newPhone;
