@@ -838,7 +838,66 @@ const App = {
     }
   },
 
-  login() {
+  
+  async acionarPerigo() {
+    this.showToast("Obtendo localização GPS...", "warning");
+    const btn = document.getElementById('btn-danger-motorista');
+    if (btn) btn.classList.add('opacity-50', 'cursor-not-allowed');
+    
+    // Mostra o painel imediatamente para tranquilizar, a gravação vai em background
+    const overlay = document.getElementById('danger-overlay');
+    if (overlay) overlay.classList.remove('hidden');
+    
+    // Função auxiliar para gravar no Firebase
+    const saveToFirebase = async (lat, lng, precisao) => {
+        try {
+            if (window.db) {
+                const incidentData = {
+                    id: 'SOS-' + Date.now().toString().slice(-6),
+                    type: 'ALERTA_MOTORISTA',
+                    status: 'CRÍTICO',
+                    date: new Date().toISOString(),
+                    location: `GPS: ${lat.toFixed(6)}, ${lng.toFixed(6)}`,
+                    latitude: lat,
+                    longitude: lng,
+                    accuracy: precisao,
+                    driverName: appState.currentUser ? appState.currentUser.name : 'Motorista Desconhecido',
+                    companyCnpj: appState.currentUser ? appState.currentUser.companyCnpj : '',
+                    description: '🚨 PÂNICO ACIONADO PELO MOTORISTA 🚨',
+                    createdAt: firebase.firestore.FieldValue.serverTimestamp()
+                };
+                
+                await window.db.collection('incidents').add(incidentData);
+                const msg = document.getElementById('danger-status-msg');
+                if (msg) msg.classList.remove('hidden');
+            }
+        } catch (err) {
+            console.error("Erro ao enviar pânico:", err);
+            this.showToast("Erro de conexão ao enviar alerta! Tente ligar 190.", "error");
+        } finally {
+            if (btn) btn.classList.remove('opacity-50', 'cursor-not-allowed');
+        }
+    };
+
+    if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(
+            (position) => {
+                saveToFirebase(position.coords.latitude, position.coords.longitude, position.coords.accuracy);
+            },
+            (error) => {
+                console.error("Geolocalização Falhou:", error);
+                this.showToast("Localização negada/indisponível. Enviando alerta sem GPS exato.", "error");
+                // Envia sem coordenadas exatas, mas envia o alerta!
+                saveToFirebase(0, 0, 0);
+            },
+            { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 }
+        );
+    } else {
+        // Envia alerta mesmo se não suportar
+        saveToFirebase(0, 0, 0);
+    }
+  },
+login() {
       const name = document.getElementById('motorista-name') ? document.getElementById('motorista-name').value.trim() : '';
       const company = document.getElementById('motorista-company') ? document.getElementById('motorista-company').value.trim() : '';
       const cnpj = document.getElementById('motorista-cnpj') ? document.getElementById('motorista-cnpj').value.trim() : '';

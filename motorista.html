@@ -175,118 +175,51 @@
   <div class="flex-1 flex overflow-hidden">
     
     <!-- SIDEBAR NAVIGATION -->
-    <aside class="no-print hidden flex-col w-64 bg-slate-900/60 border-r border-slate-800/80 p-4 space-y-6 flex-shrink-0">
+        <aside class="no-print hidden md:flex flex-col w-64 bg-slate-900/60 border-r border-slate-800/80 p-4 space-y-6 flex-shrink-0">
       
-      <!-- Seção Pré-Viagem & Planejamento -->
+      <!-- Logo -->
+      <div class="flex items-center justify-between mt-2 mb-4">
+        <div class="flex items-center gap-2">
+          <div class="w-8 h-8 rounded-xl bg-rose-600 flex items-center justify-center text-white font-bold">
+            <i data-lucide="shield-alert" class="w-5 h-5"></i>
+          </div>
+          <div>
+            <h1 class="text-sm font-black text-white leading-none tracking-wider">MOTORISTA</h1>
+            <p class="text-[9px] text-slate-400 font-bold tracking-widest uppercase">Segurança Ativa</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Menu Simplificado do Motorista -->
       <div>
-        <span class="text-[11px] font-bold text-cyan-400 uppercase tracking-wider flex items-center gap-1.5 mb-2 px-2">
-          <i data-lucide="clipboard-list" class="w-3.5 h-3.5"></i>
-          Planejamento Pré-Viagem
-        </span>
-        <nav class="space-y-1">
-          <button data-tab="planner" onclick="App.switchTab('planner')" class="nav-button w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-bold text-slate-400 hover:bg-slate-800 hover:text-slate-200 transition-all">
-            <i data-lucide="file-check-2" class="w-4 h-4 text-cyan-400"></i>
-            Plano Logístico & IA
-          </button>
-          <button data-tab="monitoring" onclick="App.switchTab('monitoring')" class="nav-button w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-bold text-slate-400 hover:bg-slate-800 hover:text-slate-200 transition-all">
-            <i data-lucide="activity" class="w-4 h-4 text-emerald-400"></i>
-            Monitoramento Tático
-          </button>
-          <button data-tab="saved-plans" onclick="App.switchTab('saved-plans')" class="nav-button w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-bold text-slate-400 hover:bg-slate-800 hover:text-slate-200 transition-all">
-            <i data-lucide="saveAll" class="w-4 h-4 text-emerald-400"></i>
-            Planos Salvos
-          </button>
-          <button data-tab="predictive" onclick="App.switchTab('predictive')" class="nav-button w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-bold text-slate-400 hover:bg-slate-800 hover:text-slate-200 transition-all">
-            <i data-lucide="compass" class="w-4 h-4 text-purple-400"></i>
-            IA Preditiva
-          </button>
-          <button data-tab="ai-plan" onclick="App.switchTab('ai-plan')" class="nav-button w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-bold text-slate-400 hover:bg-slate-800 hover:text-slate-200 transition-all">
-            <i data-lucide="brain-circuit" class="w-4 h-4 text-indigo-400"></i>
-            Plano 5W2H Prescritivo
+        <nav class="space-y-2">
+          <button data-tab="dashboard" onclick="App.switchTab('dashboard')" class="nav-button w-full flex items-center gap-3 px-3 py-3 rounded-xl text-xs font-bold transition-all bg-rose-600 text-white shadow-md shadow-rose-600/20">
+            <i data-lucide="siren" class="w-4 h-4"></i>
+            Painel de Perigo
           </button>
           
-        </nav>
-      </div>
-
-      <!-- Seção Operações & Sinistros -->
-      <div>
-        <span class="text-[11px] font-bold text-slate-500 uppercase tracking-wider block mb-2 px-2">Operação & Sinistros</span>
-        <nav class="space-y-1">
-          <button data-tab="dashboard" onclick="App.switchTab('dashboard')" class="nav-button w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-bold transition-all bg-blue-600 text-white shadow-md">
-            <i data-lucide="layout-dashboard" class="w-4 h-4"></i>
-            Dashboard & Mapa
-          </button>
-          <button data-tab="indicators" onclick="App.switchTab('indicators')" class="nav-button w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-bold text-slate-400 hover:bg-slate-800 hover:text-slate-200 transition-all">
-            <i data-lucide="bar-chart-2" class="w-4 h-4 text-indigo-400"></i>
-            Indicadores e KPIs
-          </button>
-          <button data-tab="wizard" onclick="App.switchTab('wizard')" class="nav-button w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-bold text-slate-400 hover:bg-slate-800 hover:text-slate-200 transition-all">
-            <i data-lucide="shield-alert" class="w-4 h-4"></i>
-            Golden Hour (Triagem)
-          </button>
-          <button data-tab="hazmat" onclick="App.switchTab('hazmat')" class="nav-button w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-bold text-slate-400 hover:bg-slate-800 hover:text-slate-200 transition-all">
-            <i data-lucide="flame" class="w-4 h-4"></i>
-            Produtos Perigosos (ONU)
-          </button>
-          <button data-tab="transshipment" onclick="App.switchTab('transshipment')" class="nav-button w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-bold text-slate-400 hover:bg-slate-800 hover:text-slate-200 transition-all">
-            <i data-lucide="truck" class="w-4 h-4"></i>
-            Transbordo & Resgate
-          </button>
-          <button data-tab="investigation" onclick="App.switchTab('investigation')" class="nav-button w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-bold text-slate-400 hover:bg-slate-800 hover:text-slate-200 transition-all">
-            <i data-lucide="git-merge" class="w-4 h-4"></i>
-            Causa Raiz (Ishikawa)
-          </button>
-          <button data-tab="dossier" onclick="App.switchTab('dossier')" class="nav-button w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-bold text-slate-400 hover:bg-slate-800 hover:text-slate-200 transition-all">
-            <i data-lucide="file-text" class="w-4 h-4"></i>
-            Dossiê PDF Oficial
+          <button data-tab="saved-plans" onclick="App.switchTab('saved-plans')" class="nav-button w-full flex items-center gap-3 px-3 py-3 rounded-xl text-xs font-bold text-slate-400 hover:bg-slate-800 hover:text-slate-200 transition-all">
+            <i data-lucide="clipboard-list" class="w-4 h-4 text-emerald-400"></i>
+            Planos da Empresa
           </button>
           
-          <button data-tab="cargo-catalog" onclick="App.switchTab('cargo-catalog')" class="nav-button w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-bold text-slate-400 hover:bg-slate-800 hover:text-slate-200 transition-all">
-            <i data-lucide="package" class="w-4 h-4 text-amber-400"></i>
-            Catálogo de Cargas
+          <button data-tab="indicators" onclick="App.switchTab('indicators')" class="nav-button w-full flex items-center gap-3 px-3 py-3 rounded-xl text-xs font-bold text-slate-400 hover:bg-slate-800 hover:text-slate-200 transition-all">
+            <i data-lucide="user-check" class="w-4 h-4 text-indigo-400"></i>
+            Meu Desempenho
           </button>
-<button data-tab="reverse-logistics" onclick="App.switchTab('reverse-logistics')" class="nav-button w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-bold text-slate-400 hover:bg-slate-800 hover:text-slate-200 transition-all">
-            <i data-lucide="recycle" class="w-4 h-4 text-emerald-400"></i>
-            Logística Reversa
+          
+          <button data-tab="wizard" onclick="App.switchTab('wizard')" class="nav-button w-full flex items-center gap-3 px-3 py-3 rounded-xl text-xs font-bold text-slate-400 hover:bg-slate-800 hover:text-slate-200 transition-all">
+            <i data-lucide="phone-call" class="w-4 h-4 text-rose-400"></i>
+            Emergência Rápida
           </button>
 
-          <button data-tab="docs" onclick="App.switchTab('docs')" class="nav-button w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-bold text-slate-400 hover:bg-slate-800 hover:text-slate-200 transition-all">
-            <i data-lucide="folder-open" class="w-4 h-4"></i>
-            Documentação & Laudos
-          </button>
-          <button data-tab="history" onclick="App.switchTab('history')" class="nav-button w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-bold text-slate-400 hover:bg-slate-800 hover:text-slate-200 transition-all mt-2 border-t border-slate-800 pt-2">
-            <i data-lucide="archive" class="w-4 h-4"></i>
-            Histórico Geral
+          <button data-tab="history" onclick="App.switchTab('history')" class="nav-button w-full flex items-center gap-3 px-3 py-3 rounded-xl text-xs font-bold text-slate-400 hover:bg-slate-800 hover:text-slate-200 transition-all">
+            <i data-lucide="star" class="w-4 h-4 text-amber-400"></i>
+            Avaliar Rota
           </button>
         </nav>
       </div>
 
-      <!-- Seção Motorista & Gestão de Riscos -->
-      <div>
-        <span class="text-[11px] font-bold text-amber-500 uppercase tracking-wider block mb-2 px-2 flex items-center gap-1 mt-4"><i data-lucide="star" class="w-3 h-3"></i> Avaliação & Risco</span>
-        <nav class="space-y-1">
-          <button data-tab="feedback" onclick="App.switchTab('feedback')" class="nav-button w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-bold text-slate-400 hover:bg-slate-800 hover:text-slate-200 transition-all">
-            <i data-lucide="message-square" class="w-4 h-4 text-amber-400"></i>
-            Avaliação Pós-Viagem
-          </button>
-          <button data-tab="risk-dashboard" onclick="App.switchTab('risk-dashboard')" class="nav-button w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-bold text-slate-400 hover:bg-slate-800 hover:text-slate-200 transition-all">
-            <i data-lucide="shield-alert" class="w-4 h-4 text-rose-400"></i>
-            Painel do Gestor
-          </button>
-        </nav>
-      </div>
-
-      <!-- Ocorrências Recentes -->
-      <div class="flex-1 flex flex-col min-h-0 mt-4">
-        <div class="flex items-center justify-between mb-2 px-2">
-          <span class="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Ocorrências Ativas</span>
-          <span class="text-[10px] bg-slate-800 text-slate-400 px-1.5 py-0.2 rounded font-mono">Fila 24h</span>
-        </div>
-        <div id="incidents-sidebar-list" class="flex-1 overflow-y-auto pr-1 mb-4 border-b border-slate-800 pb-2">
-          <!-- Populated by JS -->
-        </div>
-
-      </div>
     </aside>
 
     <!-- CONTENT AREA -->
@@ -1578,140 +1511,91 @@
         </div>
       </div>
 
-<div id="view-dashboard" class="tab-view hidden space-y-6">
+<div id="view-dashboard" class="tab-view block space-y-6">
+        <!-- MOTORISTA DANGER UI -->
+        <div class="flex flex-col items-center justify-center min-h-[70vh] text-center w-full max-w-2xl mx-auto space-y-8 px-4">
+            <div>
+                <h2 class="text-3xl font-black text-white mb-2">Painel de Resgate</h2>
+                <p class="text-slate-400">Em caso de acidente, assalto ou perigo iminente, pressione o botão abaixo. Sua localização exata será enviada para a central de emergência.</p>
+            </div>
+            
+            <button id="btn-danger-motorista" onclick="App.acionarPerigo()" class="w-64 h-64 md:w-80 md:h-80 rounded-full bg-rose-600 hover:bg-rose-500 shadow-[0_0_80px_rgba(225,29,72,0.6)] flex items-center justify-center flex-col gap-4 border-[12px] border-rose-900/50 transition-all hover:scale-105 active:scale-95 group">
+                <i data-lucide="siren" class="w-24 h-24 text-white animate-pulse"></i>
+                <span class="text-4xl font-black text-white tracking-widest uppercase">PERIGO</span>
+            </button>
+            
+            <div id="danger-status-msg" class="hidden text-emerald-400 font-bold bg-emerald-900/30 px-6 py-3 rounded-full border border-emerald-500/50 flex items-center gap-2">
+                <i data-lucide="check-circle-2" class="w-5 h-5"></i>
+                Alerta de Perigo e Localização Enviados!
+            </div>
+        </div>
+        </div>
         
-        <div class="relative w-full" id="global-search-container">
-          <i data-lucide="search" class="w-4 h-4 text-slate-500 absolute left-3 top-3.5"></i>
-          <input 
-            id="global-search-input"
-            type="text" 
-            placeholder="Buscar Módulos, ONU, Ocorrências, Planos... (Ctrl+K)"
-            class="bg-slate-950 border border-slate-800 rounded-xl pl-10 pr-4 py-3 text-xs text-slate-200 focus:outline-none focus:border-blue-500 transition-all w-full placeholder:text-slate-600 shadow-md"
-            autocomplete="off"
-          />
-          <!-- Busca Preditiva Dropdown -->
-          <div id="predictive-search-dropdown" class="absolute top-full left-0 mt-2 w-full bg-slate-900 border border-slate-700 rounded-xl shadow-2xl overflow-hidden hidden z-50 flex flex-col max-h-[350px] overflow-y-auto">
-          </div>
-        </div>
-
-        <!-- Risk & Top Action Banner -->
-        <div id="risk-banner-container"></div>
-
-        <!-- Metric KPI Cards Grid -->
-        <div id="dashboard-metrics-container" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4"></div>
-
-        <!-- Main Workspace: Leaflet Map & Operations Panel -->
-        <div id="dashboard-workspace-grid" class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          
-          <!-- Map Container (2 Cols on Desktop) -->
-          <div class="lg:col-span-2 bg-slate-900/60 border border-slate-800 rounded-2xl overflow-hidden flex flex-col h-[480px]">
-            <div class="p-3.5 bg-slate-900/90 border-b border-slate-800 flex items-center justify-between">
-              <div class="flex items-center gap-2">
-                <i data-lucide="map-pin" class="w-4 h-4 text-rose-500"></i>
-                <span class="text-xs font-bold text-white">Georreferenciamento & Raio de Isolamento Tático</span>
-              </div>
-              <span class="text-[11px] text-slate-400">Auditoria Visual interativa via Google</span>
-            </div>
-            <div id="incident-map" class="flex-1 w-full h-full z-10"></div>
-          </div>
-
-          <!-- Incident Activity & Timeline (1 Col) -->
-          <div class="bg-slate-900/60 border border-slate-800 rounded-2xl p-4 flex flex-col h-[480px]">
-            <div class="flex items-center justify-between pb-3 border-b border-slate-800 mb-3">
-              <div class="flex items-center gap-2">
-                <i data-lucide="activity" class="w-4 h-4 text-blue-400"></i>
-                <h3 class="text-xs font-bold text-white">Linha do Tempo Oficial</h3>
-              </div>
-              <button onclick="App.openDispatchModal()" class="text-[11px] font-bold text-blue-400 hover:text-blue-300">
-                + Novo Acionamento
-              </button>
-            </div>
-            <div id="timeline-logs-container" class="flex-1 overflow-y-auto pr-1">
-              <!-- Populated by JS -->
-            </div>
-          </div>
-        </div>
-
-        <!-- Checklist Summary Panel -->
-        <div id="dashboard-checklist-summary" class="bg-slate-900/60 border border-slate-800 rounded-2xl p-5"></div>
-
-      </div>
-
-      <!-- ============================================== -->
+        <!-- ============================================== --><!-- ============================================== -->
       <!-- VIEW: WIZARD GOLDEN HOUR -->
       <!-- ============================================== -->
       <div id="view-wizard" class="tab-view hidden space-y-6">
-        <div class="bg-gradient-to-r from-blue-950 to-slate-900 border border-blue-800/40 p-6 rounded-2xl flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-          <div>
-            <h2 class="text-lg font-black text-white flex items-center gap-2">
-              <i data-lucide="clock" class="w-5 h-5 text-blue-400"></i>
-              Protocolo de Atendimento Imediato - A Primeira Hora de Ouro (Golden Hour)
+          <div class="bg-slate-900 border border-slate-800 p-6 rounded-2xl mb-6">
+            <h2 class="text-xl font-black text-white flex items-center gap-2 mb-2">
+              <i data-lucide="phone-call" class="w-6 h-6 text-rose-500"></i> Ligações Rápidas de Emergência
             </h2>
-            <p class="text-xs text-slate-400 mt-1">
-              Processo de triagem e comunicação de emergência. Acione os protocolos e preserve a cobertura securitária.
-            </p>
+            <p class="text-sm text-slate-400">Toque nos botões abaixo para acionar ajuda imediatamente. Não hesite em ligar se estiver em perigo.</p>
           </div>
-          <button onclick="App.openNewCommunicationModal()" class="bg-blue-600 hover:bg-blue-500 text-white px-4 py-2 rounded-xl text-xs font-bold shadow-md transition-all flex items-center gap-2 flex-shrink-0">
-            <i data-lucide="plus" class="w-4 h-4"></i> Criar Alerta/Comunicação
-          </button>
-        </div>
-
-        <div id="golden-hour-cards" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          <!-- Cards dinâmicos serão renderizados aqui -->
-        </div>
-      </div>
-      
-      <!-- MODAL NOVA COMUNICAÇíO -->
-      <div id="new-communication-modal" class="hidden fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
-        <div class="bg-slate-900 border border-slate-700 rounded-2xl w-full max-w-md shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
-          <div class="p-4 border-b border-slate-800 flex justify-between items-center bg-slate-950/50">
-            <h3 class="font-bold text-white flex items-center gap-2">
-              <i data-lucide="megaphone" class="w-4 h-4 text-blue-400"></i>
-              Nova Tarefa de Comunicação
-            </h3>
-            <button type="button" onclick="App.closeNewCommunicationModal()" class="text-slate-400 hover:text-white transition-colors">
-              <i data-lucide="x" class="w-5 h-5"></i>
-            </button>
-          </div>
-          <div class="p-5 space-y-4 overflow-y-auto">
-            <div>
-              <label class="block text-xs font-bold text-slate-300 mb-1">Ação</label>
-              <select id="comm-action" onchange="App.handleCommActionChange()" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-sm text-slate-200 focus:border-blue-500 outline-none">
-                <option value="LIGAR">Ligar</option>
-                
-                <option value="NOTIFICAR">Notificar</option>
-              </select>
-            </div>
-            <div id="comm-modality-container" class="hidden">
-              <label class="block text-xs font-bold text-slate-300 mb-1">Modalidade</label>
-              <select id="comm-modality" onchange="App.handleCommModalityChange()" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-sm text-slate-200 focus:border-blue-500 outline-none">
-                <option value="WHATSAPP">WhatsApp</option>
-                <option value="EMAIL">Enviar E-mail</option>
-              </select>
-            </div>
-            <div>
-              <label class="block text-xs font-bold text-slate-300 mb-1">Destinatário</label>
-              <input type="text" id="comm-target" placeholder="Ex: PRF, Seguradora, Cliente..." class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-sm text-slate-200 focus:border-blue-500 outline-none" />
-            </div>
-            <div>
-              <label id="comm-contact-label" class="block text-xs font-bold text-slate-300 mb-1">Telefone</label>
-              <input type="text" id="comm-contact" placeholder="Ex: (11) 99999-9999" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-sm text-slate-200 focus:border-blue-500 outline-none" />
-            </div>
-            <div>
-              <label class="block text-xs font-bold text-slate-300 mb-1">Detalhes (Opcional)</label>
-              <textarea id="comm-details" rows="2" placeholder="Ex: Ligar para informar tombamento..." class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-sm text-slate-200 focus:border-blue-500 outline-none"></textarea>
-            </div>
-          </div>
-          <div class="p-4 border-t border-slate-800 bg-slate-950/50 flex justify-end gap-3">
-            <button type="button" onclick="App.closeNewCommunicationModal()" class="px-4 py-2 rounded-xl text-xs font-bold text-slate-300 hover:bg-slate-800 transition-all">Cancelar</button>
-            <button type="button" onclick="App.saveNewCommunication()" class="bg-blue-600 hover:bg-blue-500 text-white px-5 py-2 rounded-xl text-xs font-bold shadow-md transition-all flex items-center gap-2">
-              <i data-lucide="plus" class="w-4 h-4"></i> Adicionar
-            </button>
+          
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+             <a href="tel:192" class="flex items-center gap-4 bg-rose-600/20 border border-rose-500/50 p-6 rounded-2xl hover:bg-rose-600/30 transition-all">
+                <div class="w-16 h-16 rounded-full bg-rose-600 flex items-center justify-center shrink-0 shadow-lg shadow-rose-600/50">
+                    <i data-lucide="ambulance" class="w-8 h-8 text-white"></i>
+                </div>
+                <div>
+                    <h3 class="text-xl font-black text-white">SAMU (Resgate)</h3>
+                    <p class="text-rose-200">Ligue 192 para emergências médicas urgentes.</p>
+                </div>
+             </a>
+             
+             <a href="tel:190" class="flex items-center gap-4 bg-blue-600/20 border border-blue-500/50 p-6 rounded-2xl hover:bg-blue-600/30 transition-all">
+                <div class="w-16 h-16 rounded-full bg-blue-600 flex items-center justify-center shrink-0 shadow-lg shadow-blue-600/50">
+                    <i data-lucide="shield-alert" class="w-8 h-8 text-white"></i>
+                </div>
+                <div>
+                    <h3 class="text-xl font-black text-white">Polícia Militar</h3>
+                    <p class="text-blue-200">Ligue 190 para assaltos ou riscos de segurança.</p>
+                </div>
+             </a>
+             
+             <a href="tel:193" class="flex items-center gap-4 bg-orange-600/20 border border-orange-500/50 p-6 rounded-2xl hover:bg-orange-600/30 transition-all text-left">
+                <div class="w-16 h-16 rounded-full bg-orange-600 flex items-center justify-center shrink-0 shadow-lg shadow-orange-600/50">
+                    <i data-lucide="flame" class="w-8 h-8 text-white"></i>
+                </div>
+                <div>
+                    <h3 class="text-xl font-black text-white">Bombeiros</h3>
+                    <p class="text-orange-200">Ligue 193 para incêndios ou presos nas ferragens.</p>
+                </div>
+             </a>
+             
+             <button onclick="App.showToast('Ligando para a Central de Comando...')" class="flex items-center gap-4 bg-emerald-600/20 border border-emerald-500/50 p-6 rounded-2xl hover:bg-emerald-600/30 transition-all text-left">
+                <div class="w-16 h-16 rounded-full bg-emerald-600 flex items-center justify-center shrink-0 shadow-lg shadow-emerald-600/50">
+                    <i data-lucide="building-2" class="w-8 h-8 text-white"></i>
+                </div>
+                <div>
+                    <h3 class="text-xl font-black text-white">Central (Gestor)</h3>
+                    <p class="text-emerald-200">Avisar a sua base de operações logísticas.</p>
+                </div>
+             </button>
+             
+             <button onclick="App.showToast('Acionando Seguradora...')" class="md:col-span-2 flex items-center gap-4 bg-purple-600/20 border border-purple-500/50 p-6 rounded-2xl hover:bg-purple-600/30 transition-all text-left">
+                <div class="w-16 h-16 rounded-full bg-purple-600 flex items-center justify-center shrink-0 shadow-lg shadow-purple-600/50">
+                    <i data-lucide="shield-check" class="w-8 h-8 text-white"></i>
+                </div>
+                <div>
+                    <h3 class="text-xl font-black text-white">Acionar Seguradora</h3>
+                    <p class="text-purple-200">Informar sinistro ou danos à carga.</p>
+                </div>
+             </button>
           </div>
         </div>
-      </div>
-
-  <!-- ============================================== -->
+        
+        <!-- ============================================== --><!-- ============================================== -->
       <!-- VIEW: PRODUTOS PERIGOSOS (ONU / HAZMAT) -->
       <!-- ============================================== -->
       <div id="view-hazmat" class="tab-view hidden space-y-6">
@@ -3310,5 +3194,25 @@
 
   <!-- PDF Generation -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+
+    <!-- DANGER RED FLASHING OVERLAY -->
+    <div id="danger-overlay" class="hidden fixed inset-0 z-[9999] bg-rose-600 flex flex-col items-center justify-center p-6 text-center overflow-hidden">
+        <div class="absolute inset-0 bg-black/20 animate-pulse-fast"></div>
+        <div class="relative z-10 flex flex-col items-center">
+            <i data-lucide="siren" class="w-32 h-32 text-white mb-6 animate-bounce"></i>
+            <h1 class="text-4xl md:text-6xl font-black text-white mb-4 uppercase tracking-widest text-shadow-lg">ALERTA ENVIADO!</h1>
+            <p class="text-xl text-white font-bold max-w-xl mx-auto mb-10 drop-shadow-md">Mantenha a calma e afaste-se do perigo, se possível. Sua localização exata (GPS) foi enviada para o Gestor e o resgate já foi notificado.</p>
+            
+            <div class="flex flex-col gap-4 w-full max-w-md">
+                <a href="tel:190" class="w-full bg-white text-rose-700 font-black py-4 rounded-2xl text-xl hover:bg-slate-100 transition-all shadow-2xl flex items-center justify-center gap-3">
+                    <i data-lucide="phone" class="w-6 h-6"></i> LIGAR 190 (Polícia)
+                </a>
+                <button onclick="document.getElementById('danger-overlay').classList.add('hidden')" class="w-full bg-rose-800/80 text-rose-200 font-bold py-4 rounded-2xl text-sm hover:bg-rose-900 transition-all border border-rose-400 mt-4">
+                    Esconder Painel de Alerta (O Resgate Continua)
+                </button>
+            </div>
+        </div>
+    </div>
+    
 </body>
 </html>

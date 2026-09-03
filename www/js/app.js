@@ -490,6 +490,41 @@ const App = {
                       changed = true;
                   }
               });
+
+          // Listen to panics (incidents)
+          window.db.collection('incidents').where('type', '==', 'ALERTA_MOTORISTA').onSnapshot(snapshot => {
+              let rapidReports = JSON.parse(localStorage.getItem('GENERAL_RAPID_REPORTS') || '[]');
+              let changed = false;
+              
+              snapshot.docChanges().forEach(change => {
+                  if (change.type === 'added') {
+                      const data = change.doc.data();
+                      
+                      // Verifica se já não existe no rapidReports (baseado na data aproximada ou id)
+                      const exists = rapidReports.find(r => r.id === data.id);
+                      if (!exists) {
+                          const report = {
+                              id: data.id,
+                              type: 'PÂNICO - ' + (data.driverName || 'Motorista'),
+                              location: data.location || 'GPS Indisponível',
+                              timestamp: data.date || new Date().toISOString()
+                          };
+                          rapidReports.push(report);
+                          changed = true;
+                          
+                          App.showToast(`🚨 ALERTA PÂNICO: ${data.driverName} (GPS: ${data.location})`, 'error');
+                      }
+                  }
+              });
+              
+              if (changed) {
+                  localStorage.setItem('GENERAL_RAPID_REPORTS', JSON.stringify(rapidReports));
+                  if (App.currentTab === 'dashboard') {
+                      App.renderRiskDashboard();
+                  }
+              }
+          });
+
               if (changed) {
                   localStorage.setItem('general_route_evaluations', JSON.stringify(appState.routeEvaluations));
                   // Optionally trigger a re-render of the map or monitoring view
