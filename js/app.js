@@ -863,12 +863,18 @@ const App = {
         const name = document.getElementById('login-name').value;
         const company = document.getElementById('login-company').value;
         const role = document.getElementById('login-role').value;
+        const cnpj = document.getElementById('login-cnpj') ? document.getElementById('login-cnpj').value : '';
         
         if (name && company && role) {
           appState.currentUser = { id, name, company, role, companyCnpj: cnpj, provider: 'manual' };
           usersDb[id] = appState.currentUser;
           localStorage.setItem('general_users_db', JSON.stringify(usersDb));
           localStorage.setItem('general_user', JSON.stringify(appState.currentUser));
+          
+          if (window.db) {
+             window.db.collection('users').doc(id).set(appState.currentUser).catch(e => console.error(e));
+          }
+          
           this.checkAuth();
         } else {
           this.showToast('Por favor, preencha todos os campos!');
