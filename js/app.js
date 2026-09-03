@@ -5896,11 +5896,7 @@ Retorne APENAS o HTML da view, usando classes do Tailwind CSS. Não inclua \`\`\
       `;
     }
   }
-};
-
-window.addEventListener('DOMContentLoaded', () => {
-  App.init();
-
+,
   submitGoogleExtraInfo() {
     const company = document.getElementById('google-extra-company')?.value.trim();
     const cnpj = document.getElementById('google-extra-cnpj')?.value.trim();
@@ -5924,5 +5920,8 @@ window.addEventListener('DOMContentLoaded', () => {
        this.showToast(`ðŸ”‘ Bem-vindo(a) via Google, ${window.tempGoogleUser.name}!`);
     }
   },
+};
 
-}
+window.addEventListener('DOMContentLoaded', () => {
+  App.init();
+});
