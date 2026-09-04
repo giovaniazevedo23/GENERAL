@@ -3579,13 +3579,6 @@ ${NotificationHub.getTemplate('AVISO_CLIENTE_SINISTRO_ATRASO', inc)}
     
     if (ishikawaContainer && window.RCAInvestigationModule) ishikawaContainer.innerHTML = RCAInvestigationModule.renderIshikawaDiagram(rca.ishikawa);
     if (whysContainer && window.RCAInvestigationModule) whysContainer.innerHTML = RCAInvestigationModule.renderFiveWhys(rca.fiveWhys);
-  }, fiveWhys: ["", "", "", "", ""] };
-    
-    const ishikawaContainer = document.getElementById('ishikawa-interactive-container');
-    const whysContainer = document.getElementById('five-whys-interactive-container');
-    
-    if (ishikawaContainer) ishikawaContainer.innerHTML = RCAInvestigationModule.renderIshikawaDiagram(rca.ishikawa);
-    if (whysContainer) whysContainer.innerHTML = RCAInvestigationModule.renderFiveWhys(rca.fiveWhys);
   },
 
   renderDossierTab() {
