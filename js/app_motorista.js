@@ -26,8 +26,13 @@ const App = {
     this.initCargoCatalog();
     this.populateCargoDropdowns();
     this.loadCustomEventTypes();
+    // Atualiza UI de jornada se já estava ativa
+    appState.shiftActive = localStorage.getItem('general_shift_active') === 'true';
+    appState.shiftStartTime = localStorage.getItem('general_shift_start') ? parseInt(localStorage.getItem('general_shift_start')) : null;
+    
     this.checkAuth();
     this.bindEvents();
+    this.updateShiftUI();
     this.updateShiftUI();
     this.renderCurrentIncident();
     this.renderIncidentsList();
@@ -934,6 +939,100 @@ const App = {
           }
       });
   },
+  startShift() {
+      if (appState.shiftActive) {
+          this.showToast('Sua jornada já está ativa!');
+          return;
+      }
+      appState.shiftActive = true;
+      appState.shiftStartTime = new Date().getTime();
+      localStorage.setItem('general_shift_active', 'true');
+      localStorage.setItem('general_shift_start', appState.shiftStartTime);
+      this.showToast('Jornada iniciada com sucesso. Dirija com cuidado!');
+      this.updateShiftUI();
+  },
+
+  endShift() {
+      if (!appState.shiftActive) return;
+      appState.shiftActive = false;
+      appState.shiftStartTime = null;
+      localStorage.removeItem('general_shift_active');
+      localStorage.removeItem('general_shift_start');
+      this.showToast('Jornada encerrada. Bom descanso!');
+      this.updateShiftUI();
+  },
+
+  checkShiftLimit() {
+      if (!appState.shiftActive) return false;
+      const now = new Date().getTime();
+      const diffHours = (now - appState.shiftStartTime) / (1000 * 60 * 60);
+      
+      if (diffHours >= 12) {
+          this.showToast('ALERTA: Tempo limite de jornada (12h) excedido. Bloqueio preventivo ativado.');
+          return true; // Bloqueado
+      } else if (diffHours >= 11) {
+          this.showToast('AVISO: Faltam menos de 1h para o limite da jornada legal.');
+      }
+      return false; // OK
+  },
+
+  updateShiftUI() {
+      const btnStart = document.getElementById('btn-start-shift');
+      const btnEnd = document.getElementById('btn-end-shift');
+      const shiftStatus = document.getElementById('shift-status');
+      
+      if (appState.shiftActive) {
+          if (btnStart) btnStart.classList.add('hidden');
+          if (btnEnd) btnEnd.classList.remove('hidden');
+          if (shiftStatus) {
+              shiftStatus.textContent = 'Jornada Ativa (Em Serviço)';
+              shiftStatus.className = 'text-[10px] font-bold text-emerald-400 mt-1 uppercase tracking-wider block';
+          }
+      } else {
+          if (btnStart) btnStart.classList.remove('hidden');
+          if (btnEnd) btnEnd.classList.add('hidden');
+          if (shiftStatus) {
+              shiftStatus.textContent = 'Fora de Serviço';
+              shiftStatus.className = 'text-[10px] font-bold text-slate-400 mt-1 uppercase tracking-wider block';
+          }
+      }
+  },
+
+  fetchCompanyByCnpj(cnpj) {
+    if (!cnpj || cnpj.length < 18) return;
+    if (!window.db) return;
+    
+    const companyInput = document.getElementById('motorista-company');
+    if (companyInput) {
+        companyInput.value = 'Buscando empresa...';
+        companyInput.disabled = true;
+    }
+    
+    window.db.collection('companies').where('cnpj', '==', cnpj).get()
+      .then(snapshot => {
+          if (!snapshot.empty) {
+              const data = snapshot.docs[0].data();
+              if (companyInput && data.name) {
+                  companyInput.value = data.name;
+                  this.showToast('Empresa encontrada e preenchida automaticamente.');
+              }
+          } else {
+              if (companyInput) {
+                  companyInput.value = '';
+                  companyInput.disabled = false;
+                  this.showToast('Empresa não encontrada. Preencha manualmente.');
+              }
+          }
+      })
+      .catch(err => {
+          console.error("Erro ao buscar empresa:", err);
+          if (companyInput) {
+              companyInput.value = '';
+              companyInput.disabled = false;
+          }
+      });
+  },
+
 login() {
       const name = document.getElementById('motorista-name') ? document.getElementById('motorista-name').value.trim() : '';
       const company = document.getElementById('motorista-company') ? document.getElementById('motorista-company').value.trim() : '';
