@@ -77,7 +77,10 @@
           </div>
           <div class="mt-4">
             <label class="block text-xs font-bold text-slate-300 mb-1">CNPJ da Empresa</label>
-            <input type="text" id="motorista-cnpj" onblur="if(window.App) App.fetchCompanyByCnpj(this.value)" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-sm text-slate-200 font-mono focus:border-blue-500 outline-none transition-all" placeholder="00.000.000/0001-00" oninput="this.value = this.value.replace(/[^0-9]/g, '').replace(/^(\d{2})(\d{3})(\d{3})(\d{4})(\d{2}).*/, '$1.$2.$3/$4-$5');" />
+            <div class="relative">
+              <input type="text" id="motorista-cnpj" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-sm text-slate-200 font-mono focus:border-blue-500 outline-none transition-all pr-16" placeholder="00.000.000/0001-00" oninput="this.value = this.value.replace(/[^0-9]/g, '').replace(/^(\d{2})(\d{3})(\d{3})(\d{4})(\d{2}).*/, '$1.$2.$3/$4-$5');" onblur="if(window.App) App.fetchCompanyByCnpj(this.value)" />
+              <button type="button" onclick="if(window.App) App.fetchCompanyByCnpj(document.getElementById('motorista-cnpj').value)" class="absolute right-2 top-1/2 -translate-y-1/2 text-blue-400 text-xs font-bold hover:text-blue-300 transition-all p-1">Buscar</button>
+            </div>
           </div>
           <div class="mt-4">
             <label class="block text-xs font-bold text-slate-300 mb-1">Cargo</label>
