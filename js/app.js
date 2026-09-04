@@ -3569,11 +3569,17 @@ ${NotificationHub.getTemplate('AVISO_CLIENTE_SINISTRO_ATRASO', inc)}
   },
 
   renderInvestigationTab() {
-    const inc = appState.getCurrentIncident();
-    if (!inc) return;
+    const inc = appState.getCurrentIncident() || {};
     
     // Tratamento seguro para RCA
     const rca = inc.rca || { ishikawa: {}, fiveWhys: ["", "", "", "", ""] };
+    
+    const ishikawaContainer = document.getElementById('ishikawa-interactive-container');
+    const whysContainer = document.getElementById('five-whys-interactive-container');
+    
+    if (ishikawaContainer && window.RCAInvestigationModule) ishikawaContainer.innerHTML = RCAInvestigationModule.renderIshikawaDiagram(rca.ishikawa);
+    if (whysContainer && window.RCAInvestigationModule) whysContainer.innerHTML = RCAInvestigationModule.renderFiveWhys(rca.fiveWhys);
+  }, fiveWhys: ["", "", "", "", ""] };
     
     const ishikawaContainer = document.getElementById('ishikawa-interactive-container');
     const whysContainer = document.getElementById('five-whys-interactive-container');
