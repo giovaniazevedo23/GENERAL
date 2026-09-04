@@ -28,6 +28,7 @@ const App = {
     this.loadCustomEventTypes();
     this.checkAuth();
     this.bindEvents();
+    this.updateShiftUI();
     this.renderCurrentIncident();
     this.renderIncidentsList();
     this.renderHazmatCatalogue();
@@ -896,6 +897,42 @@ const App = {
         // Envia alerta mesmo se não suportar
         saveToFirebase(0, 0, 0);
     }
+  },
+
+  fetchCompanyByCnpj(cnpj) {
+    if (!cnpj || cnpj.length < 18) return;
+    if (!window.db) return;
+    
+    // Mostra feedback de carregamento
+    const companyInput = document.getElementById('motorista-company');
+    if (companyInput) {
+        companyInput.value = 'Buscando empresa...';
+        companyInput.disabled = true;
+    }
+    
+    window.db.collection('companies').where('cnpj', '==', cnpj).get()
+      .then(snapshot => {
+          if (!snapshot.empty) {
+              const data = snapshot.docs[0].data();
+              if (companyInput && data.name) {
+                  companyInput.value = data.name;
+                  this.showToast('Empresa encontrada e preenchida automaticamente.');
+              }
+          } else {
+              if (companyInput) {
+                  companyInput.value = '';
+                  companyInput.disabled = false;
+                  this.showToast('Empresa no encontrada. Preencha manualmente.');
+              }
+          }
+      })
+      .catch(err => {
+          console.error("Erro ao buscar empresa:", err);
+          if (companyInput) {
+              companyInput.value = '';
+              companyInput.disabled = false;
+          }
+      });
   },
 login() {
       const name = document.getElementById('motorista-name') ? document.getElementById('motorista-name').value.trim() : '';
@@ -3585,6 +3622,8 @@ ${NotificationHub.getTemplate('AVISO_CLIENTE_SINISTRO_ATRASO', inc)}
   },
 
   openDispatchModal() {
+      if (this.checkShiftLimit && this.checkShiftLimit()) return;
+
     const inc = appState.getCurrentIncident();
     const modal = document.getElementById('dispatch-modal');
     if (!modal || !inc) return;
@@ -3625,6 +3664,8 @@ ${NotificationHub.getTemplate('WHATSAPP_EMERGENCIA', inc)}
   },
 
   openNewIncidentModal() {
+      if (this.checkShiftLimit && this.checkShiftLimit()) return;
+
     const modal = document.getElementById('new-incident-modal');
     if (!modal) return;
     

@@ -1,66 +1,65 @@
-import os
+import re
 
-def patch_app_motorista():
-    file_path = 'js/app_motorista.js'
-    with open(file_path, 'r', encoding='utf-8') as f:
-        content = f.read()
+def patch_html():
+    with open('../motorista.html', 'r', encoding='utf-8', errors='ignore') as f:
+        html = f.read()
+    
+    # Add onblur to CNPJ input
+    if 'onblur="App.fetchCompanyByCnpj(this.value)"' not in html:
+        html = html.replace('id="motorista-cnpj"', 'id="motorista-cnpj" onblur="if(window.App) App.fetchCompanyByCnpj(this.value)"')
 
-    old_func = """    async loadCompanies() {
-        const select = document.getElementById('motorista-company');
-        if (!select || !window.db) return;
-        
-        try {
-            const snap = await window.db.collection('companies').get();
-            if (snap.empty) {
-                select.innerHTML = '<option value="">Nenhuma empresa cadastrada pelo Gestor ainda.</option>';
-                return;
-            }
-            select.innerHTML = '<option value="">Selecione a empresa...</option>';
-            snap.forEach(doc => {
-                select.innerHTML += `<option value="${doc.id}">${doc.id}</option>`;
-            });
-        } catch (e) {
-            console.error("Erro ao carregar empresas:", e);
-        }
-    },"""
+    with open('../motorista.html', 'w', encoding='utf-8') as f:
+        f.write(html)
 
-    new_func = """    async loadCompanies() {
-        const select = document.getElementById('motorista-company');
-        if (!select || !window.db) return;
-        
-        try {
-            // Buscando de saved_plans para evitar problemas de permissões em novas coleções
-            const snap = await window.db.collection('saved_plans').get();
-            const companies = new Set();
-            snap.forEach(doc => {
-                const data = doc.data();
-                if (data.approvedByCompany) {
-                    companies.add(data.approvedByCompany);
-                }
-            });
-            
-            if (companies.size === 0) {
-                select.innerHTML = '<option value="">Nenhum plano com empresa cadastrado.</option>';
-                return;
-            }
-            
-            select.innerHTML = '<option value="">Selecione a empresa...</option>';
-            companies.forEach(company => {
-                select.innerHTML += `<option value="${company}">${company}</option>`;
-            });
-        } catch (e) {
-            console.error("Erro ao carregar empresas:", e);
-            select.innerHTML = '<option value="">Erro de permissão. Tente novamente.</option>';
-        }
-    },"""
+def patch_js():
+    with open('../js/app_motorista.js', 'r', encoding='utf-8', errors='ignore') as f:
+        js = f.read()
 
-    if old_func in content:
-        content = content.replace(old_func, new_func)
-        with open(file_path, 'w', encoding='utf-8') as f:
-            f.write(content)
-        print("js/app_motorista.js patched successfully.")
-    else:
-        print("Could not find the old loadCompanies function in js/app_motorista.js")
+    fetch_logic = """
+  fetchCompanyByCnpj(cnpj) {
+    if (!cnpj || cnpj.length < 18) return;
+    if (!window.db) return;
+    
+    // Mostra feedback de carregamento
+    const companyInput = document.getElementById('motorista-company');
+    if (companyInput) {
+        companyInput.value = 'Buscando empresa...';
+        companyInput.disabled = true;
+    }
+    
+    window.db.collection('companies').where('cnpj', '==', cnpj).get()
+      .then(snapshot => {
+          if (!snapshot.empty) {
+              const data = snapshot.docs[0].data();
+              if (companyInput && data.name) {
+                  companyInput.value = data.name;
+                  this.showToast('Empresa encontrada e preenchida automaticamente.');
+              }
+          } else {
+              if (companyInput) {
+                  companyInput.value = '';
+                  companyInput.disabled = false;
+                  this.showToast('Empresa no encontrada. Preencha manualmente.');
+              }
+          }
+      })
+      .catch(err => {
+          console.error("Erro ao buscar empresa:", err);
+          if (companyInput) {
+              companyInput.value = '';
+              companyInput.disabled = false;
+          }
+      });
+  },
+"""
+    if 'fetchCompanyByCnpj' not in js:
+        # Insert it before login()
+        js = js.replace('login() {', fetch_logic + 'login() {')
+
+    with open('../js/app_motorista.js', 'w', encoding='utf-8') as f:
+        f.write(js)
 
 if __name__ == '__main__':
-    patch_app_motorista()
+    patch_html()
+    patch_js()
+    print("CNPJ fetch logic patched.")

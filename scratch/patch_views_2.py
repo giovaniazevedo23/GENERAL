@@ -1,40 +1,97 @@
-import sys
 import re
 
-file_path = "index.html"
+def patch_motorista_html():
+    with open('../motorista.html', 'r', encoding='utf-8', errors='ignore') as f:
+        html = f.read()
 
-try:
-    with open(file_path, "r", encoding="utf-8") as f:
-        content = f.read()
-except UnicodeDecodeError:
-    with open(file_path, "r", encoding="latin-1") as f:
-        content = f.read()
+    # 1. Add view-profile section
+    profile_html = """
+    <!-- VIEW: PERFIL E PATENTE -->
+    <div id="view-profile" class="tab-view hidden space-y-6">
+      <h2 class="text-xl font-black text-white flex items-center gap-2">
+        <i data-lucide="award" class="w-6 h-6 text-amber-500"></i>
+        Meu Perfil & Currículo de Honra
+      </h2>
+      <p class="text-xs text-slate-400 mt-1">Sua patente e histórico militar de excelência operacional.</p>
+      
+      <!-- Patente Card -->
+      <div class="bg-slate-900 border border-slate-800 p-5 rounded-2xl flex items-center gap-4 relative overflow-hidden">
+        <div class="absolute top-0 right-0 w-32 h-32 bg-amber-500/5 rounded-bl-full pointer-events-none"></div>
+        <div class="w-16 h-16 rounded-full bg-slate-800 border-2 border-amber-500 flex items-center justify-center shadow-lg shadow-amber-500/20">
+          <i data-lucide="shield" class="w-8 h-8 text-amber-500"></i>
+        </div>
+        <div>
+          <p class="text-[10px] text-slate-400 font-bold uppercase tracking-widest">Patente Atual</p>
+          <h3 id="profile-rank" class="text-2xl font-black text-white">Elite</h3>
+          <p id="profile-xp" class="text-xs text-amber-400 mt-1">1250 XP acumulados</p>
+        </div>
+      </div>
 
-# 1. Remove Copilot button from sidebar
-sidebar_btn_re = re.compile(r'<button data-tab="copilot"[^>]+>.*?Copilot Tático 24h\s*</button>', re.DOTALL)
-content = sidebar_btn_re.sub('', content)
+      <!-- Stats Grid -->
+      <div class="grid grid-cols-2 gap-4">
+        <div class="bg-slate-900 border border-slate-800 p-4 rounded-xl text-center">
+          <i data-lucide="package-check" class="w-5 h-5 text-emerald-400 mx-auto mb-2"></i>
+          <p class="text-2xl font-black text-white" id="stat-deliveries">42</p>
+          <p class="text-[9px] text-slate-400 uppercase tracking-widest">Entregas Perfeitas</p>
+        </div>
+        <div class="bg-slate-900 border border-slate-800 p-4 rounded-xl text-center">
+          <i data-lucide="clock" class="w-5 h-5 text-blue-400 mx-auto mb-2"></i>
+          <p class="text-2xl font-black text-white" id="stat-hours">120h</p>
+          <p class="text-[9px] text-slate-400 uppercase tracking-widest">Jornada na Lei</p>
+        </div>
+      </div>
 
-# 2. Replace Manual de Uso in Central de Ajuda
-manual_de_uso_re = re.compile(r'<a href="#" onclick="App\.showToast\(\'Em breve:[^\n]+>.*?<i data-lucide="book-open".*?<span class="text-xs font-bold text-blue-300">Manual de Uso</span>.*?</a>', re.DOTALL)
+      <!-- Currículo de Honra -->
+      <div class="bg-slate-900 border border-slate-800 p-5 rounded-2xl">
+        <h3 class="text-sm font-bold text-white mb-4 flex items-center gap-2">
+          <i data-lucide="medal" class="w-4 h-4 text-amber-500"></i>
+          Currículo de Honra
+        </h3>
+        <div class="space-y-3" id="honor-curriculum-list">
+          <div class="flex items-center gap-3 p-3 bg-slate-800/50 rounded-xl border border-slate-700/50">
+            <i data-lucide="star" class="w-4 h-4 text-amber-400"></i>
+            <div>
+              <p class="text-xs font-bold text-slate-200">Conduta Defensiva Exemplar</p>
+              <p class="text-[10px] text-slate-400">Reconhecimento do Gestor</p>
+            </div>
+          </div>
+          <div class="flex items-center gap-3 p-3 bg-slate-800/50 rounded-xl border border-slate-700/50">
+            <i data-lucide="clock" class="w-4 h-4 text-emerald-400"></i>
+            <div>
+              <p class="text-xs font-bold text-slate-200">Pontualidade Militar</p>
+              <p class="text-[10px] text-slate-400">100% de Horários Cumpridos</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <!-- /VIEW: PERFIL E PATENTE -->
+    """
+    
+    if 'id="view-profile"' not in html:
+        # Insert before <!-- MODAL: WIZARD / GOLDEN HOUR --> or another view
+        idx = html.find('<!-- MODAL:')
+        if idx == -1:
+            idx = html.find('<!-- BARRA DE NAVEGA')
+        if idx != -1:
+            html = html[:idx] + profile_html + '\n\n' + html[idx:]
 
-copilot_card = '''
-          <a href="#" onclick="App.switchTab('copilot'); document.getElementById('help-modal').classList.add('hidden');" class="bg-blue-600 border border-blue-500 rounded-xl p-4 flex flex-col items-center justify-center gap-2 hover:bg-blue-500 transition-colors relative">
-            <span class="absolute -top-2 -right-2 flex h-4 w-4">
-              <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-white opacity-75"></span>
-              <span class="relative inline-flex rounded-full h-4 w-4 bg-blue-100"></span>
-            </span>
-            <i data-lucide="bot" class="w-6 h-6 text-white"></i>
-            <span class="text-xs font-bold text-white">Copilot Tático 24h</span>
-            <span class="text-[9px] text-blue-200 text-center">IA Assistente</span>
-          </a>
-'''
-content = manual_de_uso_re.sub(copilot_card, content)
+    # 2. Add Profile button to sidebar
+    sidebar_btn = """
+          <button data-tab="profile" onclick="App.switchTab('profile')" class="nav-button w-full flex items-center gap-3 px-3 py-3 rounded-xl text-xs font-bold text-slate-400 hover:bg-slate-800 hover:text-slate-200 transition-all">
+            <i data-lucide="user-check" class="w-4 h-4 text-indigo-400"></i>
+            Meu Perfil
+          </button>
+"""
+    if 'data-tab="profile"' not in html:
+        # Replace 'Meu Desempenho' which is data-tab="indicators" to avoid duplicates
+        # or just add it after indicators
+        html = html.replace('<!-- Menu Simplificado do Motorista -->', '<!-- Menu Simplificado do Motorista -->\n' + sidebar_btn)
+        
+    with open('../motorista.html', 'w', encoding='utf-8') as f:
+        f.write(html)
+        
+    print("HTML patched for view-profile")
 
-try:
-    with open(file_path, "w", encoding="utf-8") as f:
-        f.write(content)
-except Exception:
-    with open(file_path, "w", encoding="latin-1") as f:
-        f.write(content)
-
-print("index.html patched again.")
+if __name__ == '__main__':
+    patch_motorista_html()
