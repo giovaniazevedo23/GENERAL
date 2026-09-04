@@ -904,132 +904,88 @@ const App = {
     }
   },
 
-  fetchCompanyByCnpj(cnpj) {
-    if (!cnpj || cnpj.length < 18) return;
+    fetchCompanyByCnpj(cnpj) {
+    if (!cnpj || cnpj.length < 14) return;
     if (!window.db) return;
     
-    // Mostra feedback de carregamento
     const companyInput = document.getElementById('motorista-company');
     if (companyInput) {
         companyInput.value = 'Buscando empresa...';
         companyInput.disabled = true;
     }
     
-    window.db.collection('companies').where('cnpj', '==', cnpj).get()
-      .then(snapshot => {
-          if (!snapshot.empty) {
-              const data = snapshot.docs[0].data();
-              if (companyInput && data.name) {
-                  companyInput.value = data.name;
-                  this.showToast('Empresa encontrada e preenchida automaticamente.');
-              }
-          } else {
-              if (companyInput) {
-                  companyInput.value = '';
-                  companyInput.disabled = false;
-                  this.showToast('Empresa no encontrada. Preencha manualmente.');
-              }
-          }
-      })
-      .catch(err => {
-          console.error("Erro ao buscar empresa:", err);
-          if (companyInput) {
-              companyInput.value = '';
-              companyInput.disabled = false;
-          }
-      });
+    // Normalize CNPJ (only numbers) for comparison as well
+    const cleanCnpj = cnpj.replace(/[^0-9]/g, '');
+    
+    // Try multiple possible ways the user might have saved it in Firebase:
+    // 1. field 'cnpj' with exact string
+    // 2. field 'CNPJ' with exact string
+    // 3. Document ID == cnpj
+    // 4. field 'cnpj' == cleanCnpj
+    
+    Promise.all([
+      window.db.collection('companies').where('cnpj', '==', cnpj).get(),
+      window.db.collection('companies').where('CNPJ', '==', cnpj).get(),
+      window.db.collection('companies').where('cnpj', '==', cleanCnpj).get(),
+      window.db.collection('companies').doc(cnpj).get(),
+      window.db.collection('companies').doc(cleanCnpj).get()
+    ]).then(results => {
+        let foundData = null;
+        
+        if (!results[0].empty) foundData = results[0].docs[0].data();
+        else if (!results[1].empty) foundData = results[1].docs[0].data();
+        else if (!results[2].empty) foundData = results[2].docs[0].data();
+        else if (results[3].exists) foundData = results[3].data();
+        else if (results[4].exists) foundData = results[4].data();
+        
+        if (foundData && (foundData.name || foundData.nome)) {
+            if (companyInput) {
+                companyInput.value = foundData.name || foundData.nome;
+                companyInput.disabled = true; // Block manual edit
+                this.showToast('Empresa validada no banco de dados!');
+            }
+        } else {
+            if (companyInput) {
+                companyInput.value = '';
+                companyInput.disabled = false;
+                this.showToast('CNPJ não encontrado. Digite manualmente.');
+            }
+        }
+    }).catch(err => {
+        console.error("Erro ao buscar empresa:", err);
+        if (companyInput) {
+            companyInput.value = '';
+            companyInput.disabled = false;
+        }
+    });
   },
-  startShift() {
-      if (appState.shiftActive) {
-          this.showToast('Sua jornada já está ativa!');
+
+
+  populateFeedbackRoutes() {
+      const select = document.getElementById('feedback-route');
+      if (!select) return;
+      if (!window.db) {
+          select.innerHTML = '<option value="">Banco offline (digite manualmente)</option>';
+          select.outerHTML = '<input type="text" id="feedback-route" placeholder="Digite a rota manualmente" class="w-full bg-slate-950 border border-slate-800 rounded-lg p-3 text-sm text-white" />';
           return;
       }
-      appState.shiftActive = true;
-      appState.shiftStartTime = new Date().getTime();
-      localStorage.setItem('general_shift_active', 'true');
-      localStorage.setItem('general_shift_start', appState.shiftStartTime);
-      this.showToast('Jornada iniciada com sucesso. Dirija com cuidado!');
-      this.updateShiftUI();
-  },
-
-  endShift() {
-      if (!appState.shiftActive) return;
-      appState.shiftActive = false;
-      appState.shiftStartTime = null;
-      localStorage.removeItem('general_shift_active');
-      localStorage.removeItem('general_shift_start');
-      this.showToast('Jornada encerrada. Bom descanso!');
-      this.updateShiftUI();
-  },
-
-  checkShiftLimit() {
-      if (!appState.shiftActive) return false;
-      const now = new Date().getTime();
-      const diffHours = (now - appState.shiftStartTime) / (1000 * 60 * 60);
       
-      if (diffHours >= 12) {
-          this.showToast('ALERTA: Tempo limite de jornada (12h) excedido. Bloqueio preventivo ativado.');
-          return true; // Bloqueado
-      } else if (diffHours >= 11) {
-          this.showToast('AVISO: Faltam menos de 1h para o limite da jornada legal.');
-      }
-      return false; // OK
-  },
-
-  updateShiftUI() {
-      const btnStart = document.getElementById('btn-start-shift');
-      const btnEnd = document.getElementById('btn-end-shift');
-      const shiftStatus = document.getElementById('shift-status');
-      
-      if (appState.shiftActive) {
-          if (btnStart) btnStart.classList.add('hidden');
-          if (btnEnd) btnEnd.classList.remove('hidden');
-          if (shiftStatus) {
-              shiftStatus.textContent = 'Jornada Ativa (Em Serviço)';
-              shiftStatus.className = 'text-[10px] font-bold text-emerald-400 mt-1 uppercase tracking-wider block';
+      select.innerHTML = '<option value="">Carregando rotas...</option>';
+      window.db.collection('saved_plans').orderBy('createdAt', 'desc').limit(20).get().then(snapshot => {
+          if (snapshot.empty) {
+              select.innerHTML = '<option value="">Nenhuma rota encontrada.</option>';
+              return;
           }
-      } else {
-          if (btnStart) btnStart.classList.remove('hidden');
-          if (btnEnd) btnEnd.classList.add('hidden');
-          if (shiftStatus) {
-              shiftStatus.textContent = 'Fora de Serviço';
-              shiftStatus.className = 'text-[10px] font-bold text-slate-400 mt-1 uppercase tracking-wider block';
-          }
-      }
-  },
-
-  fetchCompanyByCnpj(cnpj) {
-    if (!cnpj || cnpj.length < 18) return;
-    if (!window.db) return;
-    
-    const companyInput = document.getElementById('motorista-company');
-    if (companyInput) {
-        companyInput.value = 'Buscando empresa...';
-        companyInput.disabled = true;
-    }
-    
-    window.db.collection('companies').where('cnpj', '==', cnpj).get()
-      .then(snapshot => {
-          if (!snapshot.empty) {
-              const data = snapshot.docs[0].data();
-              if (companyInput && data.name) {
-                  companyInput.value = data.name;
-                  this.showToast('Empresa encontrada e preenchida automaticamente.');
-              }
-          } else {
-              if (companyInput) {
-                  companyInput.value = '';
-                  companyInput.disabled = false;
-                  this.showToast('Empresa não encontrada. Preencha manualmente.');
-              }
-          }
-      })
-      .catch(err => {
-          console.error("Erro ao buscar empresa:", err);
-          if (companyInput) {
-              companyInput.value = '';
-              companyInput.disabled = false;
-          }
+          let html = '<option value="">Selecione um Plano salvo...</option>';
+          snapshot.forEach(doc => {
+              const data = doc.data();
+              const routeName = `${data.origin || 'Origem'} → ${data.destination || 'Destino'} (${data.company || 'Geral'})`;
+              html += `<option value="${doc.id}">${routeName}</option>`;
+          });
+          select.innerHTML = html;
+      }).catch(err => {
+          console.error("Erro carregando rotas para avaliacao", err);
+          select.innerHTML = '<option value="">Erro ao carregar. Digite a rota.</option>';
       });
   },
 
@@ -1099,6 +1055,10 @@ login() {
   },
 
   switchTab(tabId) {
+      if (tabId === 'feedback') {
+          if (this.populateFeedbackRoutes) this.populateFeedbackRoutes();
+      }
+
     if (tabId === 'monitoring') {
         const selector = document.getElementById('tactical-plan-selector');
         if (selector && appState.savedPlans) {

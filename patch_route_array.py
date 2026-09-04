@@ -1,37 +1,78 @@
-import codecs
+import re
 
-target_file = r'c:\Users\giova\.gemini\antigravity\scratch\general-app\js\app.js'
+def patch_motorista_html():
+    with open('motorista.html', 'r', encoding='utf-8', errors='ignore') as f:
+        html = f.read()
 
-with codecs.open(target_file, 'r', encoding='utf-8') as f:
-    content = f.read()
-
-# Fix in triggerPlanAnalysis (around line 1389)
-old_code_1 = """          const routeData = await window.LocationService.calculateRoute(originCoords, destCoords);
-          
-          if (routeData) {"""
-
-new_code_1 = """          let routeData = await window.LocationService.calculateRoute(originCoords, destCoords);
-          if (Array.isArray(routeData) && routeData.length > 0) routeData = routeData[0];
-          
-          if (routeData) {"""
-
-content = content.replace(old_code_1, new_code_1)
-
-# Fix in runAWS_AIRouting (around line 1677)
-old_code_2 = """        const routeData = await window.LocationService.calculateRoute(originCoords, destCoords);
-        if (routeData) {"""
-
-new_code_2 = """        let routeData = await window.LocationService.calculateRoute(originCoords, destCoords);
-        if (Array.isArray(routeData) && routeData.length > 0) routeData = routeData[0];
+    # 1. Replace feedback-route input with a select
+    old_input = '<input type="text" id="feedback-route" placeholder="Ex: BR-116, SP-280..." class="w-full bg-slate-950 border border-slate-800 rounded-lg p-3 text-sm text-white" />'
+    new_select = '<select id="feedback-route" class="w-full bg-slate-950 border border-slate-800 rounded-lg p-3 text-sm text-white"><option value="">Carregando planos...</option></select>'
+    
+    if old_input in html:
+        html = html.replace(old_input, new_select)
         
-        if (routeData) {"""
+    with open('motorista.html', 'w', encoding='utf-8') as f:
+        f.write(html)
+    print("motorista.html feedback-route patched.")
 
-content = content.replace(old_code_2, new_code_2)
+def patch_app_motorista_js():
+    with open('js/app_motorista.js', 'r', encoding='utf-8', errors='ignore') as f:
+        js = f.read()
 
-with codecs.open(r'c:\Users\giova\.gemini\antigravity\scratch\general-app\js\app.js', 'w', encoding='utf-8') as f:
-    f.write(content)
+    # 2. Add populateFeedbackRoutes method
+    populate_logic = """
+  populateFeedbackRoutes() {
+      const select = document.getElementById('feedback-route');
+      if (!select) return;
+      if (!window.db) {
+          select.innerHTML = '<option value="">Banco offline (digite manualmente)</option>';
+          select.outerHTML = '<input type="text" id="feedback-route" placeholder="Digite a rota manualmente" class="w-full bg-slate-950 border border-slate-800 rounded-lg p-3 text-sm text-white" />';
+          return;
+      }
+      
+      select.innerHTML = '<option value="">Carregando rotas...</option>';
+      window.db.collection('saved_plans').orderBy('createdAt', 'desc').limit(20).get().then(snapshot => {
+          if (snapshot.empty) {
+              select.innerHTML = '<option value="">Nenhuma rota encontrada.</option>';
+              return;
+          }
+          let html = '<option value="">Selecione um Plano salvo...</option>';
+          snapshot.forEach(doc => {
+              const data = doc.data();
+              const routeName = `${data.origin || 'Origem'} \u2192 ${data.destination || 'Destino'} (${data.company || 'Geral'})`;
+              html += `<option value="${doc.id}">${routeName}</option>`;
+          });
+          select.innerHTML = html;
+      }).catch(err => {
+          console.error("Erro carregando rotas para avaliacao", err);
+          select.innerHTML = '<option value="">Erro ao carregar. Digite a rota.</option>';
+      });
+  },
+"""
 
-with codecs.open(r'c:\Users\giova\.gemini\antigravity\scratch\general-app\www\js\app.js', 'w', encoding='utf-8') as f:
-    f.write(content)
+    if 'populateFeedbackRoutes()' not in js:
+        js = js.replace('login() {', populate_logic + '\nlogin() {')
 
-print("Array fix applied successfully.")
+    # 3. Call populateFeedbackRoutes on switchTab('feedback')
+    # Let's find switchTab logic
+    # In app_motorista.js, it's switchTab(tabId)
+    switch_tab_hook = """
+      if (tabId === 'feedback') {
+          if (this.populateFeedbackRoutes) this.populateFeedbackRoutes();
+      }
+"""
+    if 'this.populateFeedbackRoutes()' not in js:
+        # inject it inside switchTab
+        idx = js.find('switchTab(tabId) {')
+        if idx != -1:
+            idx = js.find('{', idx) + 1
+            js = js[:idx] + switch_tab_hook + js[idx:]
+
+    with open('js/app_motorista.js', 'w', encoding='utf-8') as f:
+        f.write(js)
+    
+    print("app_motorista.js populateFeedbackRoutes patched.")
+
+if __name__ == '__main__':
+    patch_motorista_html()
+    patch_app_motorista_js()
