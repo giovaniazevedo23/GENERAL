@@ -6,6 +6,7 @@ if (-not (Test-Path $WwwDir)) {
 }
 
 Copy-Item -Path (Join-Path $AppDir "index.html") -Destination $WwwDir -Force
+Copy-Item -Path (Join-Path $AppDir "motorista.html") -Destination $WwwDir -Force
 Copy-Item -Path (Join-Path $AppDir "manifest.json") -Destination $WwwDir -Force
 Copy-Item -Path (Join-Path $AppDir "sw.js") -Destination $WwwDir -Force
 Copy-Item -Path (Join-Path $AppDir "css") -Destination $WwwDir -Recurse -Force

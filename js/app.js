@@ -344,7 +344,37 @@ const App = {
     }
   },
 
+  renderEliteSquad() {
+    const container = document.getElementById('elite-squad-container');
+    if (!container) return;
+
+    const drivers = [
+      { name: 'Marcos Silva', rank: 'Elite', score: 99, trips: 142 },
+      { name: 'João Santos', rank: 'Veterano', score: 95, trips: 110 },
+      { name: 'Ana Costa', rank: 'Especialista', score: 89, trips: 75 }
+    ];
+
+    container.innerHTML = drivers.map((d, i) => `
+      <div class="flex items-center justify-between p-3 rounded-xl border border-slate-800 bg-slate-950/50">
+        <div class="flex items-center gap-3">
+          <div class="w-8 h-8 rounded-lg ${i === 0 ? 'bg-amber-500 text-white' : i === 1 ? 'bg-slate-400 text-slate-900' : 'bg-orange-700 text-white'} font-black flex items-center justify-center text-xs">
+            #${i+1}
+          </div>
+          <div class="flex flex-col">
+            <span class="text-sm font-bold text-white">${d.name}</span>
+            <span class="text-[10px] font-bold text-amber-500 uppercase tracking-widest">${d.rank}</span>
+          </div>
+        </div>
+        <div class="text-right flex flex-col">
+          <span class="text-xs font-black text-emerald-400">${d.score} pts</span>
+          <span class="text-[9px] text-slate-500">${d.trips} missões</span>
+        </div>
+      </div>
+    `).join('');
+  },
+
   renderIndicatorsTab() {
+    this.renderEliteSquad();
     if (!window.appState) return;
     const incidents = appState.incidents || [];
     const totalIncidents = incidents.length;
@@ -3003,6 +3033,11 @@ ${NotificationHub.getTemplate('AVISO_CLIENTE_SINISTRO_ATRASO', inc)}
    * FINALIZAÇÃƒO DE OCORRÃŠNCIA COM AUDITORIA PÓS-MORTEM
    * ======================================================= */
   async openFinishIncidentModal() {
+    if (appState.currentUser && appState.currentUser.role !== 'Administrador Geral') {
+      this.showToast('⚠️ Acesso Negado: Apenas Administrador Geral pode finalizar ocorrências (Cadeia de Comando).');
+      return;
+    }
+
     const inc = appState.getCurrentIncident();
     const modal = document.getElementById('finish-incident-modal');
     const content = document.getElementById('finish-incident-content');

@@ -281,14 +281,11 @@
         </nav>
       </div>
 
-      <!-- Seção Motorista & Gestão de Riscos -->
+
+      <!-- Seção de Riscos -->
       <div>
-        <span class="text-[11px] font-bold text-amber-500 uppercase tracking-wider block mb-2 px-2 flex items-center gap-1 mt-4"><i data-lucide="star" class="w-3 h-3"></i> Avaliação & Risco</span>
+        <span class="text-[11px] font-bold text-rose-500 uppercase tracking-wider block mb-2 px-2 mt-4 flex items-center gap-1"><i data-lucide="shield-alert" class="w-3 h-3"></i> Gestão de Risco</span>
         <nav class="space-y-1">
-          <button data-tab="feedback" onclick="App.switchTab('feedback')" class="nav-button w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-bold text-slate-400 hover:bg-slate-800 hover:text-slate-200 transition-all">
-            <i data-lucide="message-square" class="w-4 h-4 text-amber-400"></i>
-            Avaliação Pós-Viagem
-          </button>
           <button data-tab="risk-dashboard" onclick="App.switchTab('risk-dashboard')" class="nav-button w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-bold text-slate-400 hover:bg-slate-800 hover:text-slate-200 transition-all">
             <i data-lucide="shield-alert" class="w-4 h-4 text-rose-400"></i>
             Painel do Gestor
@@ -1345,6 +1342,23 @@
             <i data-lucide="refresh-cw" class="w-4 h-4"></i> Atualizar Dados
           </button>
         </div>
+
+      <!-- TROPA DE ELITE WIDGET -->
+      <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-lg relative overflow-hidden mb-6">
+        <div class="absolute top-0 right-0 w-32 h-32 bg-amber-500/5 rounded-bl-full pointer-events-none"></div>
+        <div class="flex items-center gap-3 mb-6">
+          <div class="w-10 h-10 rounded-xl bg-amber-500/10 flex items-center justify-center border border-amber-500/20">
+            <i data-lucide="award" class="w-5 h-5 text-amber-500"></i>
+          </div>
+          <div>
+            <h3 class="text-sm font-black text-white uppercase tracking-wider">Tropa de Elite</h3>
+            <p class="text-xs text-slate-400">Ranking dos melhores motoristas</p>
+          </div>
+        </div>
+        <div id="elite-squad-container" class="space-y-3">
+          <!-- Renderizado via JS -->
+        </div>
+      </div>
 
         <!-- KPI Grid -->
         <div class="grid grid-cols-2 md:grid-cols-4 gap-4">

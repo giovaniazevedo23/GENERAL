@@ -908,11 +908,50 @@ login() {
           return;
       }
       
+      // Calcula Patente Simples (Aleatória para demonstração)
+      const patentes = ['Recruta', 'Soldado', 'Especialista', 'Veterano', 'Elite'];
+      const rank = patentes[Math.floor(Math.random() * patentes.length)];
+      
       const id = 'MOT-' + Math.floor(Math.random() * 90000 + 10000);
-      appState.currentUser = { id, name, company, companyCnpj: cnpj, role: role, provider: 'manual' };
+      appState.currentUser = { id, name, company, companyCnpj: cnpj, role: role, rank: rank, provider: 'manual' };
       localStorage.setItem('general_user', JSON.stringify(appState.currentUser));
-      this.checkAuth();
-      this.showToast(`Bem-vindo, ${name}!`);
+      document.getElementById('login-overlay').classList.add('hidden');
+      document.getElementById('checklist-overlay').classList.remove('hidden');
+      
+      const rankTextEl = document.getElementById('motorista-rank-text');
+      if (rankTextEl) rankTextEl.innerText = rank;
+
+      this.showToast(`Bem-vindo, ${name}! Por favor, complete a vistoria.`);
+  },
+  validatePreMissionChecklist() {
+    const checks = document.querySelectorAll('.pre-mission-check');
+    const allChecked = Array.from(checks).every(c => c.checked);
+    const btn = document.getElementById('btn-action-checklist');
+    if (allChecked) {
+      btn.removeAttribute('disabled');
+      btn.classList.remove('bg-slate-800', 'text-slate-500', 'cursor-not-allowed');
+      btn.classList.add('bg-blue-600', 'text-white', 'hover:bg-blue-500', 'shadow-lg', 'shadow-blue-500/30');
+    } else {
+      btn.setAttribute('disabled', 'true');
+      btn.classList.add('bg-slate-800', 'text-slate-500', 'cursor-not-allowed');
+      btn.classList.remove('bg-blue-600', 'text-white', 'hover:bg-blue-500', 'shadow-lg', 'shadow-blue-500/30');
+    }
+  },
+  submitPreMissionChecklist() {
+    document.getElementById('checklist-overlay').classList.add('hidden');
+    this.showToast('Vistoria concluída. Boa viagem!');
+    this.checkAuth(); 
+  },
+  triggerPanic() {
+    const overlay = document.getElementById('danger-overlay');
+    if (overlay) {
+      overlay.classList.remove('hidden');
+      // Enviar localização/alerta
+      if (typeof saveToFirebase === 'function') {
+         saveToFirebase(0, 0, 0); 
+      }
+      this.showToast('⚠️ ALERTA DE PÂNICO ACIONADO! Resgate notificado.');
+    }
   },
   logout() {
     if (confirm('Deseja realmente sair da sua conta no GENERAL?')) {
