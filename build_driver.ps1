@@ -11,7 +11,7 @@ Set-Location android
 Set-Location ..
 
 Write-Host "Copying APK to landing page..."
-Copy-Item android\app\build\outputs\apk\debug\app-debug.apk landing-page\GENERAL_Motorista_v5_1_Militar.apk -Force
+Copy-Item android\app\build\outputs\apk\debug\app-debug.apk landing-page\GENERAL_Motorista_v5_2_Militar.apk -Force
 
 Write-Host "Restoring index.html (Manager app)..."
 Copy-Item index_gestor_temp.html index.html -Force

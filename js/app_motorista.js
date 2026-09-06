@@ -1043,8 +1043,48 @@ login() {
          saveToFirebase(0, 0, 0); 
       }
       this.showToast('⚠️ ALERTA DE PÂNICO ACIONADO! Resgate notificado.');
+      
+      // Auto-dismiss após 6 segundos para não travar a tela
+      setTimeout(() => {
+          overlay.classList.add('hidden');
+      }, 6000);
     }
   },
+
+  sendRapidReport(type) {
+      const modal = document.getElementById('report-alert-modal');
+      if (modal) {
+          modal.classList.add('translate-y-full');
+      }
+      
+      this.showToast(`🚨 Alerta de "${type}" enviado à central com sucesso!`, 'success');
+      
+      // Criar reporte no UI de risco (Opcional, simulação de envio)
+      const list = document.getElementById('risk-rapid-reports');
+      if (list) {
+          const div = document.createElement('div');
+          div.className = 'flex items-center gap-3 p-3 bg-slate-800/50 rounded-xl border border-slate-700/50';
+          let icon = 'alert-triangle';
+          let color = 'rose-400';
+          if(type === 'Acidente' || type === 'Lentidão') { icon = type === 'Acidente' ? 'car-front' : 'car'; color = 'rose-400'; }
+          if(type === 'Polícia') { icon = 'shield-alert'; color = 'blue-400'; }
+          if(type === 'Obra' || type === 'Faixa interditada' || type === 'Objeto na via') { icon = 'construction'; color = 'amber-400'; }
+          
+          div.innerHTML = `
+            <i data-lucide="${icon}" class="w-4 h-4 text-${color}"></i>
+            <div>
+              <p class="text-xs font-bold text-slate-200">${type} reportado</p>
+              <p class="text-[10px] text-slate-400">Agora mesmo - Localização GPS (Auto)</p>
+            </div>
+          `;
+          list.prepend(div);
+          
+          if (window.lucide && window.lucide.createIcons) {
+              window.lucide.createIcons();
+          }
+      }
+  },
+
   logout() {
     if (confirm('Deseja realmente sair da sua conta no GENERAL?')) {
       localStorage.removeItem('general_user');

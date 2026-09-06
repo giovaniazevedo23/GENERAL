@@ -216,7 +216,13 @@
         </div>
       </div>
 
-      <!-- Menu Simplificado do Motorista -->
+      <!-- Menu Simplificado do Motorista -->
+
+          <button data-tab="activities" onclick="App.switchTab('activities')" class="nav-button w-full flex items-center gap-3 px-3 py-3 rounded-xl text-xs font-bold text-slate-400 hover:bg-slate-800 hover:text-slate-200 transition-all">
+            <i data-lucide="navigation" class="w-4 h-4 text-blue-400"></i>
+            Atividades em Rota
+          </button>
+
 
           <button data-tab="profile" onclick="App.switchTab('profile')" class="nav-button w-full flex items-center gap-3 px-3 py-3 rounded-xl text-xs font-bold text-slate-400 hover:bg-slate-800 hover:text-slate-200 transition-all">
             <i data-lucide="user-check" class="w-4 h-4 text-indigo-400"></i>
@@ -2322,10 +2328,6 @@
         </div>
       </div>
 
-    </main>
-  </div>
-
-  
     <!-- VIEW: PERFIL E PATENTE -->
     <div id="view-profile" class="tab-view hidden space-y-6">
       <h2 class="text-xl font-black text-white flex items-center gap-2">
@@ -2385,7 +2387,100 @@
         </div>
       </div>
     </div>
-    <!-- /VIEW: PERFIL E PATENTE -->
+    <!-- /VIEW: PERFIL E PATENTE -->
+    
+    <!-- VIEW: ATIVIDADES EM ROTA -->
+    <div id="view-activities" class="tab-view hidden h-full flex flex-col relative pb-20">
+      <div class="bg-slate-900 border-b border-slate-800 p-4 shrink-0 flex items-center justify-between">
+        <div>
+          <h2 class="text-xl font-black text-white flex items-center gap-2">
+            <i data-lucide="navigation" class="w-6 h-6 text-blue-400"></i> Atividades em Rota
+          </h2>
+          <p class="text-xs text-slate-400 mt-1">Navegação e reportes em tempo real para a Base.</p>
+        </div>
+      </div>
+      <div class="relative flex-1 bg-slate-950 w-full min-h-[500px] flex flex-col">
+        <!-- Mapa Simulado -->
+        <div id="driver-activity-map" class="w-full flex-1 bg-slate-800/80 flex items-center justify-center relative overflow-hidden">
+            <div class="absolute inset-0 opacity-20" style="background-image: url('data:image/svg+xml,%3Csvg width=\'60\' height=\'60\' viewBox=\'0 0 60 60\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Cg fill=\'none\' fill-rule=\'evenodd\'%3E%3Cg fill=\'%239C92AC\' fill-opacity=\'0.4\'%3E%3Cpath d=\'M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z\'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E');"></div>
+            
+            <div class="z-10 flex flex-col items-center gap-3">
+              <i data-lucide="map" class="w-12 h-12 text-slate-500 opacity-50"></i>
+              <span class="text-slate-500 font-bold uppercase tracking-widest text-sm text-center px-4">Mapa de Navegação <br><span class="text-[10px] normal-case opacity-70">Aguardando coordenadas GPS...</span></span>
+            </div>
+        </div>
+        
+        <!-- FAB Button -->
+        <button onclick="document.getElementById('report-alert-modal').classList.remove('translate-y-full')" class="absolute bottom-12 right-6 z-[100] bg-rose-600 hover:bg-rose-500 text-white rounded-full px-5 py-4 font-black shadow-[0_10px_25px_rgba(225,29,72,0.5)] flex items-center gap-2 transition-all hover:scale-105 active:scale-95 border-2 border-rose-400/50">
+            <i data-lucide="plus" class="w-5 h-5"></i>
+            ADICIONAR ALERTA
+        </button>
+      </div>
+    </div>
+    <!-- /VIEW: ATIVIDADES EM ROTA -->
+
+    <!-- BOTTOM SHEET MODAL: ADICIONAR ALERTA -->
+    <div id="report-alert-modal" class="fixed inset-x-0 bottom-0 z-[1001] bg-white rounded-t-3xl shadow-[0_-10px_40px_rgba(0,0,0,0.5)] transform translate-y-full transition-transform duration-300 ease-in-out max-h-[90vh] overflow-y-auto">
+      <div class="p-6 pb-12">
+        <div class="w-12 h-1.5 bg-slate-200 rounded-full mx-auto mb-6"></div>
+        <div class="flex items-center justify-between mb-6">
+          <h3 class="text-xl font-black text-slate-900">Adicionar um alerta</h3>
+          <button onclick="document.getElementById('report-alert-modal').classList.add('translate-y-full')" class="p-2 bg-slate-100 hover:bg-slate-200 rounded-full text-slate-500 transition-colors">
+            <i data-lucide="x" class="w-5 h-5"></i>
+          </button>
+        </div>
+        
+        <div class="grid grid-cols-3 gap-4">
+          <button onclick="App.sendRapidReport('Acidente')" class="bg-slate-50 border border-slate-200 p-3 rounded-2xl flex flex-col items-center justify-center gap-2 hover:bg-slate-100 transition-colors active:bg-slate-200">
+            <div class="w-12 h-12 bg-rose-100 rounded-full flex items-center justify-center mb-1">
+              <i data-lucide="car-front" class="w-6 h-6 text-rose-600"></i>
+            </div>
+            <span class="text-xs font-bold text-slate-700 text-center leading-tight">Acidente</span>
+          </button>
+          
+          <button onclick="App.sendRapidReport('Lentidão')" class="bg-slate-50 border border-slate-200 p-3 rounded-2xl flex flex-col items-center justify-center gap-2 hover:bg-slate-100 transition-colors active:bg-slate-200">
+            <div class="w-12 h-12 bg-rose-100 rounded-full flex items-center justify-center mb-1">
+              <i data-lucide="car" class="w-6 h-6 text-rose-600"></i>
+            </div>
+            <span class="text-xs font-bold text-slate-700 text-center leading-tight">Lentidão</span>
+          </button>
+          
+          <button onclick="App.sendRapidReport('Polícia')" class="bg-slate-50 border border-slate-200 p-3 rounded-2xl flex flex-col items-center justify-center gap-2 hover:bg-slate-100 transition-colors active:bg-slate-200">
+            <div class="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center mb-1">
+              <i data-lucide="shield-alert" class="w-6 h-6 text-blue-600"></i>
+            </div>
+            <span class="text-xs font-bold text-slate-700 text-center leading-tight">Polícia</span>
+          </button>
+          
+          <button onclick="App.sendRapidReport('Obra')" class="bg-slate-50 border border-slate-200 p-3 rounded-2xl flex flex-col items-center justify-center gap-2 hover:bg-slate-100 transition-colors active:bg-slate-200">
+            <div class="w-12 h-12 bg-amber-100 rounded-full flex items-center justify-center mb-1">
+              <i data-lucide="construction" class="w-6 h-6 text-amber-600"></i>
+            </div>
+            <span class="text-xs font-bold text-slate-700 text-center leading-tight">Obra</span>
+          </button>
+          
+          <button onclick="App.sendRapidReport('Faixa interditada')" class="bg-slate-50 border border-slate-200 p-3 rounded-2xl flex flex-col items-center justify-center gap-2 hover:bg-slate-100 transition-colors active:bg-slate-200">
+            <div class="w-12 h-12 bg-amber-100 rounded-full flex items-center justify-center mb-1">
+              <i data-lucide="bar-chart-horizontal" class="w-6 h-6 text-amber-600 transform -rotate-90"></i>
+            </div>
+            <span class="text-xs font-bold text-slate-700 text-center leading-tight">Faixa<br>interditada</span>
+          </button>
+          
+          <button onclick="App.sendRapidReport('Objeto na via')" class="bg-slate-50 border border-slate-200 p-3 rounded-2xl flex flex-col items-center justify-center gap-2 hover:bg-slate-100 transition-colors active:bg-slate-200">
+            <div class="w-12 h-12 bg-amber-100 rounded-full flex items-center justify-center mb-1">
+              <i data-lucide="triangle-alert" class="w-6 h-6 text-amber-600"></i>
+            </div>
+            <span class="text-xs font-bold text-slate-700 text-center leading-tight">Objeto<br>na via</span>
+          </button>
+        </div>
+      </div>
+    </div>
+    <!-- /BOTTOM SHEET MODAL: ADICIONAR ALERTA -->
+\n    </main>
+  </div>
+
+  
+    
     
 
 <!-- MODAL: REFORMULAÇÃO DO PLANO PELA IA (ANTES VS DEPOIS) -->
