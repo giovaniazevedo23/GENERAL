@@ -129,9 +129,20 @@ class StateStore {
         snapshot.forEach(doc => plans.push(doc.data()));
         if (plans.length > 0) {
           localStorage.setItem('general_saved_plans', JSON.stringify(plans));
-          // If appState manages this directly, update it. App uses localStorage mainly, but let's re-render if needed.
-          if (window.App && typeof window.App.renderSavedPlansTab === 'function') {
-            window.App.renderSavedPlansTab();
+          
+          // Update the local state directly so selects get the newest data
+          this.savedPlans = plans;
+
+          if (window.App) {
+            if (typeof window.App.renderSavedPlansTab === 'function') {
+              window.App.renderSavedPlansTab();
+            }
+            if (typeof window.App.populateIncidentSelectors === 'function') {
+              window.App.populateIncidentSelectors();
+            }
+            if (typeof window.App.populateFeedbackRoutes === 'function') {
+              window.App.populateFeedbackRoutes();
+            }
           }
         }
       });

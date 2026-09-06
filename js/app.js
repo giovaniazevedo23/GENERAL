@@ -5192,14 +5192,35 @@ Retorne APENAS o HTML da view, usando classes do Tailwind CSS. Não inclua \`\`\
       jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
     };
     
-      html2pdf().from(container).set(opt).toPdf().get('pdf').then(function (pdf) {
-        const blob = pdf.output('bloburl');
-        window.open(blob, '_blank');
-      }).catch(err => {
-        console.error("PDF generation error:", err);
-      });
-
-    this.showToast('Download do PDF iniciado!', 'success');
+    // Hybrid approach: Capacitor Native Share or Web Download
+    if (window.Capacitor && window.Capacitor.isNativePlatform()) {
+        this.showToast('Gerando PDF nativo...', 'info');
+        html2pdf().from(container).set(opt).outputPdf('datauristring').then(async (pdfBase64) => {
+            try {
+                const base64Data = pdfBase64.split(',')[1];
+                const result = await window.Capacitor.Plugins.Filesystem.writeFile({
+                    path: opt.filename,
+                    data: base64Data,
+                    directory: 'CACHE'
+                });
+                
+                await window.Capacitor.Plugins.Share.share({
+                    title: 'Documento PDF',
+                    text: 'Aqui está o seu PDF.',
+                    url: result.uri,
+                    dialogTitle: 'Salvar ou Compartilhar PDF'
+                });
+                
+                this.showToast('PDF gerado e pronto para compartilhamento!', 'success');
+            } catch (e) {
+                console.error("Erro Capacitor Filesystem/Share:", e);
+                this.showToast('Erro ao exportar PDF no Android. Use a versão Web.', 'error');
+            }
+        });
+    } else {
+        html2pdf().from(container).set(opt).save();
+        this.showToast('Download do PDF iniciado!', 'success');
+    }
   },
 
   downloadPlanPDF(planData = null) {

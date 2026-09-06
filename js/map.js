@@ -240,7 +240,14 @@ class GeneralMapController {
 
   invalidateSize() {
     if (this.map) {
-      setTimeout(() => this.map.invalidateSize(), 200);
+      setTimeout(() => {
+        this.map.invalidateSize();
+        // Re-fit bounds after invalidating size to ensure route is fully visible
+        if (this.routePolylines && this.routePolylines.length > 0) {
+          const group = new L.featureGroup(this.routePolylines);
+          this.map.fitBounds(group.getBounds(), { padding: [50, 50] });
+        }
+      }, 200);
     }
   }
 }
