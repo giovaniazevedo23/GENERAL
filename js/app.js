@@ -992,7 +992,12 @@ const App = {
       }
     } catch (e) {
       console.error(e);
-      this.showToast('Erro ao logar com Google.');
+      let msg = 'Erro ao logar com Google.';
+      if (e.code === 'auth/popup-blocked') msg = 'Pop-up bloqueado pelo navegador. Por favor, permita pop-ups e tente novamente.';
+      else if (e.code === 'auth/unauthorized-domain') msg = 'Este domínio não está autorizado no Firebase. Configure no Firebase Console.';
+      else if (e.message) msg = 'Erro: ' + e.message;
+      this.showToast(msg, 'error');
+      alert(msg); // Fallback alert in case toast fails
     }
   },
 
@@ -4748,21 +4753,30 @@ Retorne APENAS o HTML da view, usando classes do Tailwind CSS. Não inclua \`\`\
     const newName = document.getElementById('profile-name').value;
     const newCompany = document.getElementById('profile-company').value;
     const newRole = document.getElementById('profile-role').value;
+    const newCnpj = document.getElementById('profile-cnpj') ? document.getElementById('profile-cnpj').value : '';
     const newEmail = document.getElementById('profile-email') ? document.getElementById('profile-email').value : '';
     const newPhone = document.getElementById('profile-phone') ? document.getElementById('profile-phone').value : '';
     
     if (newName && newCompany && newRole) {
       appState.currentUser.name = newName;
       appState.currentUser.company = newCompany;
-        if (window.db && newCompany) {
-            window.db.collection('companies').doc(newCompany).set({ name: newCompany }).catch(console.error);
-        }
+      if (newCnpj) appState.currentUser.companyCnpj = newCnpj;
+      
+      if (window.db && newCompany) {
+          let cDoc = newCnpj ? newCnpj : newCompany;
+          window.db.collection('companies').doc(cDoc).set({ name: newCompany, cnpj: newCnpj }).catch(console.error);
+      }
 
       appState.currentUser.role = newRole;
       appState.currentUser.email = newEmail;
       appState.currentUser.phone = newPhone;
       
       localStorage.setItem('general_user', JSON.stringify(appState.currentUser));
+      
+      if (window.db) {
+          let uid = appState.currentUser.email || appState.currentUser.id;
+          window.db.collection('users').doc(uid).set(appState.currentUser).catch(console.error);
+      }
       
       const showCopilotCb = document.getElementById('profile-show-copilot');
       if (showCopilotCb) {
@@ -5994,6 +6008,8 @@ Retorne APENAS o HTML da view, usando classes do Tailwind CSS. Não inclua \`\`\
        if (window.db) {
            window.db.collection('users').doc(window.tempGoogleUser.email).set(window.tempGoogleUser)
              .catch(e => console.error('Erro ao salvar no Firestore:', e));
+           window.db.collection('companies').doc(cnpj).set({ name: company, cnpj: cnpj })
+             .catch(e => console.error('Erro ao salvar empresa:', e));
        }
        
        document.getElementById('google-extra-modal').classList.add('hidden');
