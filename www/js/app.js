@@ -992,7 +992,12 @@ const App = {
       }
     } catch (e) {
       console.error(e);
-      this.showToast('Erro ao logar com Google.');
+      let msg = 'Erro ao logar com Google.';
+      if (e.code === 'auth/popup-blocked') msg = 'Pop-up bloqueado pelo navegador. Por favor, permita pop-ups e tente novamente.';
+      else if (e.code === 'auth/unauthorized-domain') msg = 'Este domínio não está autorizado no Firebase. Configure no Firebase Console.';
+      else if (e.message) msg = 'Erro: ' + e.message;
+      this.showToast(msg, 'error');
+      alert(msg); // Fallback alert in case toast fails
     }
   },
 
@@ -3569,8 +3574,7 @@ ${NotificationHub.getTemplate('AVISO_CLIENTE_SINISTRO_ATRASO', inc)}
   },
 
   renderInvestigationTab() {
-    const inc = appState.getCurrentIncident();
-    if (!inc) return;
+    const inc = appState.getCurrentIncident() || {};
     
     // Tratamento seguro para RCA
     const rca = inc.rca || { ishikawa: {}, fiveWhys: ["", "", "", "", ""] };
@@ -3578,8 +3582,8 @@ ${NotificationHub.getTemplate('AVISO_CLIENTE_SINISTRO_ATRASO', inc)}
     const ishikawaContainer = document.getElementById('ishikawa-interactive-container');
     const whysContainer = document.getElementById('five-whys-interactive-container');
     
-    if (ishikawaContainer) ishikawaContainer.innerHTML = RCAInvestigationModule.renderIshikawaDiagram(rca.ishikawa);
-    if (whysContainer) whysContainer.innerHTML = RCAInvestigationModule.renderFiveWhys(rca.fiveWhys);
+    if (ishikawaContainer && window.RCAInvestigationModule) ishikawaContainer.innerHTML = RCAInvestigationModule.renderIshikawaDiagram(rca.ishikawa);
+    if (whysContainer && window.RCAInvestigationModule) whysContainer.innerHTML = RCAInvestigationModule.renderFiveWhys(rca.fiveWhys);
   },
 
   renderDossierTab() {
@@ -4749,21 +4753,30 @@ Retorne APENAS o HTML da view, usando classes do Tailwind CSS. Não inclua \`\`\
     const newName = document.getElementById('profile-name').value;
     const newCompany = document.getElementById('profile-company').value;
     const newRole = document.getElementById('profile-role').value;
+    const newCnpj = document.getElementById('profile-cnpj') ? document.getElementById('profile-cnpj').value : '';
     const newEmail = document.getElementById('profile-email') ? document.getElementById('profile-email').value : '';
     const newPhone = document.getElementById('profile-phone') ? document.getElementById('profile-phone').value : '';
     
     if (newName && newCompany && newRole) {
       appState.currentUser.name = newName;
       appState.currentUser.company = newCompany;
-        if (window.db && newCompany) {
-            window.db.collection('companies').doc(newCompany).set({ name: newCompany }).catch(console.error);
-        }
+      if (newCnpj) appState.currentUser.companyCnpj = newCnpj;
+      
+      if (window.db && newCompany) {
+          let cDoc = newCnpj ? newCnpj : newCompany;
+          window.db.collection('companies').doc(cDoc).set({ name: newCompany, cnpj: newCnpj }).catch(console.error);
+      }
 
       appState.currentUser.role = newRole;
       appState.currentUser.email = newEmail;
       appState.currentUser.phone = newPhone;
       
       localStorage.setItem('general_user', JSON.stringify(appState.currentUser));
+      
+      if (window.db) {
+          let uid = appState.currentUser.email || appState.currentUser.id;
+          window.db.collection('users').doc(uid).set(appState.currentUser).catch(console.error);
+      }
       
       const showCopilotCb = document.getElementById('profile-show-copilot');
       if (showCopilotCb) {
@@ -5193,14 +5206,35 @@ Retorne APENAS o HTML da view, usando classes do Tailwind CSS. Não inclua \`\`\
       jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
     };
     
-      html2pdf().from(container).set(opt).toPdf().get('pdf').then(function (pdf) {
-        const blob = pdf.output('bloburl');
-        window.open(blob, '_blank');
-      }).catch(err => {
-        console.error("PDF generation error:", err);
-      });
-
-    this.showToast('Download do PDF iniciado!', 'success');
+    // Hybrid approach: Capacitor Native Share or Web Download
+    if (window.Capacitor && window.Capacitor.isNativePlatform()) {
+        this.showToast('Gerando PDF nativo...', 'info');
+        html2pdf().from(container).set(opt).outputPdf('datauristring').then(async (pdfBase64) => {
+            try {
+                const base64Data = pdfBase64.split(',')[1];
+                const result = await window.Capacitor.Plugins.Filesystem.writeFile({
+                    path: opt.filename,
+                    data: base64Data,
+                    directory: 'CACHE'
+                });
+                
+                await window.Capacitor.Plugins.Share.share({
+                    title: 'Documento PDF',
+                    text: 'Aqui está o seu PDF.',
+                    url: result.uri,
+                    dialogTitle: 'Salvar ou Compartilhar PDF'
+                });
+                
+                this.showToast('PDF gerado e pronto para compartilhamento!', 'success');
+            } catch (e) {
+                console.error("Erro Capacitor Filesystem/Share:", e);
+                this.showToast('Erro ao exportar PDF no Android. Use a versão Web.', 'error');
+            }
+        });
+    } else {
+        html2pdf().from(container).set(opt).save();
+        this.showToast('Download do PDF iniciado!', 'success');
+    }
   },
 
   downloadPlanPDF(planData = null) {
@@ -5974,6 +6008,8 @@ Retorne APENAS o HTML da view, usando classes do Tailwind CSS. Não inclua \`\`\
        if (window.db) {
            window.db.collection('users').doc(window.tempGoogleUser.email).set(window.tempGoogleUser)
              .catch(e => console.error('Erro ao salvar no Firestore:', e));
+           window.db.collection('companies').doc(cnpj).set({ name: company, cnpj: cnpj })
+             .catch(e => console.error('Erro ao salvar empresa:', e));
        }
        
        document.getElementById('google-extra-modal').classList.add('hidden');

@@ -117,6 +117,36 @@ const App = {
     }
   },
 
+  startShift() {
+      if (!appState.shiftActive) {
+          appState.shiftActive = true;
+          appState.shiftStartTime = Date.now();
+          localStorage.setItem('general_shift_active', 'true');
+          localStorage.setItem('general_shift_start', appState.shiftStartTime.toString());
+          this.showToast('Check-in realizado com sucesso! Expediente iniciado.', 'success');
+      } else {
+          appState.shiftActive = false;
+          appState.shiftStartTime = null;
+          localStorage.removeItem('general_shift_active');
+          localStorage.removeItem('general_shift_start');
+          this.showToast('Check-out realizado. Expediente finalizado.', 'info');
+      }
+      this.updateShiftUI();
+  },
+
+  updateShiftUI() {
+      const btn = document.getElementById('btn-start-shift');
+      if (!btn) return;
+      if (appState.shiftActive) {
+          btn.innerHTML = '<i data-lucide="stop-circle" class="w-5 h-5"></i> Finalizar Expediente';
+          btn.className = 'w-full bg-rose-600 hover:bg-rose-500 text-white font-bold py-3 rounded-xl transition-all shadow-lg shadow-rose-500/20 flex items-center justify-center gap-2 mt-4';
+      } else {
+          btn.innerHTML = '<i data-lucide="play-circle" class="w-5 h-5"></i> Iniciar Expediente';
+          btn.className = 'w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-3 rounded-xl transition-all shadow-lg shadow-blue-500/20 flex items-center justify-center gap-2 mt-4';
+      }
+      if (typeof lucide !== 'undefined') lucide.createIcons();
+  },
+
   submitParecer() {
     const inc = appState.getCurrentIncident();
     if (!inc) return;
@@ -530,12 +560,19 @@ const App = {
 
   async checkAuth() {
       const overlay = document.getElementById('login-overlay');
+      const savedUser = localStorage.getItem('general_user');
+      if (savedUser && !appState.currentUser) {
+          try {
+              appState.currentUser = JSON.parse(savedUser);
+          } catch(e) {}
+      }
+
       if (appState.currentUser) {
         if (overlay) overlay.style.opacity = '0';
         setTimeout(() => { if (overlay) overlay.classList.add('hidden'); }, 300);
         this.updateProfileUI();
         this.loadPlansForCompany(appState.currentUser.company);
-        this.switchTab('monitoring'); // Force monitoramento tab
+        this.switchTab('dashboard'); // Default to dashboard instead of monitoring
       } else {
         if (overlay) {
             overlay.classList.remove('hidden');
@@ -928,7 +965,9 @@ const App = {
       window.db.collection('companies').where('CNPJ', '==', cnpj).get(),
       window.db.collection('companies').where('cnpj', '==', cleanCnpj).get(),
       window.db.collection('companies').doc(cnpj).get(),
-      window.db.collection('companies').doc(cleanCnpj).get()
+      window.db.collection('companies').doc(cleanCnpj).get(),
+      window.db.collection('users').where('companyCnpj', '==', cnpj).get(),
+      window.db.collection('users').where('companyCnpj', '==', cleanCnpj).get()
     ]).then(results => {
         let foundData = null;
         
@@ -937,6 +976,14 @@ const App = {
         else if (!results[2].empty) foundData = results[2].docs[0].data();
         else if (results[3].exists) foundData = results[3].data();
         else if (results[4].exists) foundData = results[4].data();
+        else if (!results[5].empty) {
+            let userData = results[5].docs[0].data();
+            foundData = { name: userData.company || userData.name };
+        }
+        else if (!results[6].empty) {
+            let userData = results[6].docs[0].data();
+            foundData = { name: userData.company || userData.name };
+        }
         
         if (foundData && (foundData.name || foundData.nome)) {
             if (companyInput) {
@@ -991,12 +1038,13 @@ const App = {
 
 login() {
       const name = document.getElementById('motorista-name') ? document.getElementById('motorista-name').value.trim() : '';
+      const cpf = document.getElementById('motorista-cpf') ? document.getElementById('motorista-cpf').value.trim() : '';
       const company = document.getElementById('motorista-company') ? document.getElementById('motorista-company').value.trim() : '';
       const cnpj = document.getElementById('motorista-cnpj') ? document.getElementById('motorista-cnpj').value.trim() : '';
       const role = document.getElementById('motorista-cargo') ? document.getElementById('motorista-cargo').value.trim() : 'Motorista';
       
-      if (!name || !company || !cnpj) {
-          this.showToast('Preencha seu nome, empresa e CNPJ!');
+      if (!name || !company || !cnpj || !cpf) {
+          this.showToast('Preencha seu nome, CPF, empresa e CNPJ!');
           return;
       }
       
@@ -1005,7 +1053,7 @@ login() {
       const rank = patentes[Math.floor(Math.random() * patentes.length)];
       
       const id = 'MOT-' + Math.floor(Math.random() * 90000 + 10000);
-      appState.currentUser = { id, name, company, companyCnpj: cnpj, role: role, rank: rank, provider: 'manual' };
+      appState.currentUser = { id, name, cpf, company, companyCnpj: cnpj, role: role, rank: rank, provider: 'manual' };
       localStorage.setItem('general_user', JSON.stringify(appState.currentUser));
       document.getElementById('login-overlay').classList.add('hidden');
       document.getElementById('checklist-overlay').classList.remove('hidden');
@@ -1043,8 +1091,48 @@ login() {
          saveToFirebase(0, 0, 0); 
       }
       this.showToast('⚠️ ALERTA DE PÂNICO ACIONADO! Resgate notificado.');
+      
+      // Auto-dismiss após 6 segundos para não travar a tela
+      setTimeout(() => {
+          overlay.classList.add('hidden');
+      }, 6000);
     }
   },
+
+  sendRapidReport(type) {
+      const modal = document.getElementById('report-alert-modal');
+      if (modal) {
+          modal.classList.add('translate-y-full');
+      }
+      
+      this.showToast(`🚨 Alerta de "${type}" enviado à central com sucesso!`, 'success');
+      
+      // Criar reporte no UI de risco (Opcional, simulação de envio)
+      const list = document.getElementById('risk-rapid-reports');
+      if (list) {
+          const div = document.createElement('div');
+          div.className = 'flex items-center gap-3 p-3 bg-slate-800/50 rounded-xl border border-slate-700/50';
+          let icon = 'alert-triangle';
+          let color = 'rose-400';
+          if(type === 'Acidente' || type === 'Lentidão') { icon = type === 'Acidente' ? 'car-front' : 'car'; color = 'rose-400'; }
+          if(type === 'Polícia') { icon = 'shield-alert'; color = 'blue-400'; }
+          if(type === 'Obra' || type === 'Faixa interditada' || type === 'Objeto na via') { icon = 'construction'; color = 'amber-400'; }
+          
+          div.innerHTML = `
+            <i data-lucide="${icon}" class="w-4 h-4 text-${color}"></i>
+            <div>
+              <p class="text-xs font-bold text-slate-200">${type} reportado</p>
+              <p class="text-[10px] text-slate-400">Agora mesmo - Localização GPS (Auto)</p>
+            </div>
+          `;
+          list.prepend(div);
+          
+          if (window.lucide && window.lucide.createIcons) {
+              window.lucide.createIcons();
+          }
+      }
+  },
+
   logout() {
     if (confirm('Deseja realmente sair da sua conta no GENERAL?')) {
       localStorage.removeItem('general_user');
@@ -5254,14 +5342,35 @@ Retorne APENAS o HTML da view, usando classes do Tailwind CSS. Não inclua \`\`\
       jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
     };
     
-      html2pdf().from(container).set(opt).toPdf().get('pdf').then(function (pdf) {
-        const blob = pdf.output('bloburl');
-        window.open(blob, '_blank');
-      }).catch(err => {
-        console.error("PDF generation error:", err);
-      });
-
-    this.showToast('Download do PDF iniciado!', 'success');
+    // Hybrid approach: Capacitor Native Share or Web Download
+    if (window.Capacitor && window.Capacitor.isNativePlatform()) {
+        this.showToast('Gerando PDF nativo...', 'info');
+        html2pdf().from(container).set(opt).outputPdf('datauristring').then(async (pdfBase64) => {
+            try {
+                const base64Data = pdfBase64.split(',')[1];
+                const result = await window.Capacitor.Plugins.Filesystem.writeFile({
+                    path: opt.filename,
+                    data: base64Data,
+                    directory: 'CACHE'
+                });
+                
+                await window.Capacitor.Plugins.Share.share({
+                    title: 'Documento PDF',
+                    text: 'Aqui está o seu PDF.',
+                    url: result.uri,
+                    dialogTitle: 'Salvar ou Compartilhar PDF'
+                });
+                
+                this.showToast('PDF gerado e pronto para compartilhamento!', 'success');
+            } catch (e) {
+                console.error("Erro Capacitor Filesystem/Share:", e);
+                this.showToast('Erro ao exportar PDF no Android. Use a versão Web.', 'error');
+            }
+        });
+    } else {
+        html2pdf().from(container).set(opt).save();
+        this.showToast('Download do PDF iniciado!', 'success');
+    }
   },
 
   downloadPlanPDF(planData = null) {
