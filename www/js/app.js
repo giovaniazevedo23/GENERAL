@@ -23,6 +23,9 @@ const App = {
   },
 
   init() {
+    this.renderDriversList();
+    this.initLiveMonitoring();
+
     this.initCargoCatalog();
     this.populateCargoDropdowns();
     this.loadCustomEventTypes();
@@ -529,6 +532,10 @@ const App = {
               snapshot.docChanges().forEach(change => {
                   if (change.type === 'added') {
                       const data = change.doc.data();
+                      // Multi-tenancy filter
+                      if (appState.currentUser && appState.currentUser.companyCnpj && data.companyCnpj && data.companyCnpj !== appState.currentUser.companyCnpj) {
+                          return;
+                      }
                       
                       // Verifica se já não existe no rapidReports (baseado na data aproximada ou id)
                       const exists = rapidReports.find(r => r.id === data.id);
@@ -998,6 +1005,89 @@ const App = {
       else if (e.message) msg = 'Erro: ' + e.message;
       this.showToast(msg, 'error');
       alert(msg); // Fallback alert in case toast fails
+    }
+  },
+
+  loadDriverEvaluations() {
+    if (!appState.currentUser || !appState.currentUser.companyCnpj) {
+        this.showToast('Você precisa configurar o CNPJ da empresa no seu perfil para ver os motoristas.', 'warning');
+        return;
+    }
+    
+    const container = document.getElementById('driver-evaluation-list');
+    if (!container) return;
+    
+    container.innerHTML = '<div class="text-slate-400 text-sm italic col-span-full">Carregando motoristas...</div>';
+    
+    if (window.db) {
+        window.db.collection('users')
+            .where('role', '==', 'motorista')
+            .where('companyCnpj', '==', appState.currentUser.companyCnpj)
+            .get()
+            .then(snap => {
+                if (snap.empty) {
+                    container.innerHTML = '<div class="text-slate-400 text-sm italic col-span-full">Nenhum motorista encontrado para o CNPJ ' + appState.currentUser.companyCnpj + '.</div>';
+                    return;
+                }
+                
+                let html = '';
+                snap.forEach(doc => {
+                    const data = doc.data();
+                    html += `
+                    <div class="bg-slate-950 border border-slate-800 rounded-2xl p-4 flex flex-col justify-between">
+                        <div>
+                            <div class="flex justify-between items-start mb-2">
+                                <h4 class="text-white font-bold text-sm">${data.name || 'Sem Nome'}</h4>
+                                <span class="bg-blue-500/20 text-blue-400 text-[10px] font-bold px-2 py-0.5 rounded-full">${data.xp || 0} XP</span>
+                            </div>
+                            <p class="text-xs text-slate-400 mb-1"><i data-lucide="credit-card" class="w-3 h-3 inline"></i> CPF: ${data.cpf || 'Não informado'}</p>
+                            <p class="text-[10px] text-slate-500 mb-3">ID: ${data.id}</p>
+                        </div>
+                        
+                        <div class="flex gap-2">
+                            <button onclick="if(window.App) App.sendRewardXP('${data.name}', this)" class="flex-1 bg-indigo-600/20 hover:bg-indigo-600/40 text-indigo-400 border border-indigo-600/30 text-xs font-bold py-2 rounded-xl transition-all" title="Recompensar XP">
+                                +50 XP
+                            </button>
+                            <button onclick="if(window.App) App.showToast('Avaliação gravada com sucesso!')" class="flex-1 bg-emerald-600/20 hover:bg-emerald-600/40 text-emerald-400 border border-emerald-600/30 text-xs font-bold py-2 rounded-xl transition-all">
+                                <i data-lucide="star" class="w-3 h-3 inline"></i> 5 Estrelas
+                            </button>
+                        </div>
+                    </div>
+                    `;
+                });
+                container.innerHTML = html;
+                if (window.lucide) window.lucide.createIcons();
+            })
+            .catch(e => {
+                console.error("Erro ao carregar motoristas:", e);
+                container.innerHTML = '<div class="text-red-400 text-sm italic col-span-full">Erro ao carregar motoristas.</div>';
+            });
+    }
+  },
+  
+  sendRewardXP(driverName, btnElement) {
+    if (btnElement) {
+       btnElement.disabled = true;
+       btnElement.innerHTML = '<i data-lucide="check" class="w-4 h-4"></i>';
+       btnElement.classList.replace('bg-indigo-600', 'bg-slate-700');
+       btnElement.classList.replace('hover:bg-indigo-500', 'bg-slate-700');
+       if(window.lucide) window.lucide.createIcons();
+    }
+    this.showToast('Recompensa de +50 XP enviada com sucesso para ' + driverName + '!');
+    if (window.db) {
+       window.db.collection('users')
+           .where('name', '==', driverName)
+           .where('role', '==', 'motorista')
+           .get()
+           .then(snap => {
+               if (!snap.empty) {
+                   snap.forEach(doc => {
+                       let xp = doc.data().xp || 0;
+                       doc.ref.update({ xp: xp + 50 });
+                   });
+               }
+           })
+           .catch(e => console.error("Erro ao enviar recompensa:", e));
     }
   },
 
@@ -1750,6 +1840,9 @@ Favor confirmar deslocamento da ${base.name}.`);
   loadPlanPreset(index = 0) {
     const preset = LogisticsPlanner.DEFAULT_PLANS[index] || LogisticsPlanner.DEFAULT_PLANS[0];
     if (document.getElementById('plan-client-name')) document.getElementById('plan-client-name').value = preset.clientName;
+if (document.getElementById('plan-driver-name') && preset.driverName) document.getElementById('plan-driver-name').value = preset.driverName;
+if (document.getElementById('plan-driver-cpf') && preset.driverCpf) document.getElementById('plan-driver-cpf').value = preset.driverCpf;
+if (document.getElementById('plan-driver-cnpj') && preset.driverCnpj) document.getElementById('plan-driver-cnpj').value = preset.driverCnpj;
     if (document.getElementById('plan-client-contact')) document.getElementById('plan-client-contact').value = preset.clientContact;
     if (document.getElementById('plan-client-phone')) document.getElementById('plan-client-phone').value = preset.clientPhone;
     if (document.getElementById('plan-client-nfe')) document.getElementById('plan-client-nfe').value = preset.clientNfe;
@@ -3780,15 +3873,16 @@ ${NotificationHub.getTemplate('WHATSAPP_EMERGENCIA', inc)}
     let lat = -23.5505; // Default (SP)
     let lng = -46.6333;
 
+    const state = formData.get('state') || '';
+    const city = formData.get('city') || '';
+    const cityStr = city ? `${city} / ${state}` : '';
+    const cep = formData.get('cep') || '';
+
     // Tentativa de Geocodificação AWS Location Service para a Cidade/Referência
     try {
       if (window.LocationService) {
         this.showToast('Buscando localização aproximada via satélite...');
         
-        const state = formData.get('state') || '';
-        const city = formData.get('city') || '';
-        const cityStr = city ? `${city} / ${state}` : '';
-        const cep = formData.get('cep') || '';
         const query = cep ? `${cep}, ${cityStr}, Brazil` : `${cityStr}, Brazil`;
         
         console.log('AWS Geocode Query:', query);
@@ -4777,6 +4871,9 @@ Retorne APENAS o HTML da view, usando classes do Tailwind CSS. Não inclua \`\`\
           let uid = appState.currentUser.email || appState.currentUser.id;
           window.db.collection('users').doc(uid).set(appState.currentUser).catch(console.error);
       }
+      this.showToast('Dados salvos com sucesso!');
+      const modal = document.getElementById('profile-modal');
+      if (modal) modal.classList.add('hidden');
       
       const showCopilotCb = document.getElementById('profile-show-copilot');
       if (showCopilotCb) {
@@ -5936,6 +6033,48 @@ Retorne APENAS o HTML da view, usando classes do Tailwind CSS. Não inclua \`\`\
     return score;
   },
 
+  renderIncidentsSidebar() {
+    const activeContainer = document.getElementById('incidents-sidebar-list');
+    if (!activeContainer) return;
+    
+    const activeIncidents = (window.appState && window.appState.incidents) ? window.appState.incidents.filter(inc => inc.status !== 'CONCLUIDA') : [];
+    
+    if (activeIncidents.length === 0) {
+      activeContainer.innerHTML = `
+        <div class="text-center p-4 border border-dashed border-slate-800 rounded-xl mt-4">
+          <i data-lucide="check-circle" class="w-6 h-6 text-emerald-500 mx-auto mb-2"></i>
+          <p class="text-xs font-bold text-slate-400">Nenhuma ocorrência ativa.</p>
+        </div>`;
+    } else {
+      activeContainer.innerHTML = activeIncidents.map(inc => {
+        let badgeColor = 'bg-amber-900/30 text-amber-500 border-amber-800';
+        let icon = 'alert-triangle';
+        
+        if (inc.status === 'CRÍTICO' || inc.type === 'ALERTA_MOTORISTA' || inc.type === 'Acidente') {
+            badgeColor = 'bg-rose-900/30 text-rose-500 border-rose-800';
+            icon = 'siren';
+        }
+
+        return `
+        <div class="bg-slate-950 border border-slate-800 p-3 rounded-xl hover:border-slate-700 transition-colors cursor-pointer mb-3" onclick="if(window.App && window.App.viewIncident) window.App.viewIncident('${inc.id}')">
+          <div class="flex items-center justify-between mb-2">
+            <span class="text-[10px] font-mono text-slate-500">${inc.id}</span>
+            <span class="text-[9px] px-1.5 py-0.5 rounded border ${badgeColor} uppercase font-bold flex items-center gap-1">
+              <i data-lucide="${icon}" class="w-3 h-3"></i> ${inc.status}
+            </span>
+          </div>
+          <p class="text-xs font-bold text-slate-200 mb-1 line-clamp-1">${inc.type || inc.cargoDescription || 'Ocorrência Geral'}</p>
+          <div class="flex items-center gap-2 text-[10px] text-slate-400">
+            <i data-lucide="user" class="w-3 h-3"></i> ${inc.driverName || 'Motorista'}
+          </div>
+        </div>
+        `;
+      }).join('');
+    }
+    
+    if (window.lucide && window.lucide.createIcons) window.lucide.createIcons();
+  },
+
   renderRiskDashboard() {
     const feedbacks = JSON.parse(localStorage.getItem('GENERAL_FEEDBACKS') || '[]');
     const rapidReports = JSON.parse(localStorage.getItem('GENERAL_RAPID_REPORTS') || '[]');
@@ -5955,13 +6094,23 @@ Retorne APENAS o HTML da view, usando classes do Tailwind CSS. Não inclua \`\`\
     // Render Rapid Reports
     const reportsList = document.getElementById('risk-rapid-reports');
     if (reportsList) {
-      reportsList.innerHTML = rapidReports.length === 0 ? '<p class="text-xs text-slate-500">Nenhum reporte recente.</p>' : rapidReports.slice(-5).reverse().map(r => `
-        <div class="bg-slate-950 p-3 rounded-xl border border-rose-900/50 flex flex-col">
-          <span class="text-xs font-bold text-rose-400 mb-1">PERIGO: ${r.type}</span>
-          <span class="text-[10px] text-slate-400">Local: ${r.location}</span>
-          <span class="text-[9px] text-slate-500 mt-1">${new Date(r.timestamp).toLocaleString('pt-BR')}</span>
+      reportsList.innerHTML = rapidReports.length === 0 ? '<p class="text-xs text-slate-500">Nenhum reporte recente.</p>' : rapidReports.slice(-5).reverse().map(r => {
+        let colorClass = 'text-rose-400';
+        let borderClass = 'border-rose-900/50';
+        let icon = 'alert-triangle';
+        
+        if (r.originalType === 'Polícia') { colorClass = 'text-blue-400'; borderClass = 'border-blue-900/50'; icon = 'shield-alert'; }
+        else if (r.originalType === 'Obra' || r.originalType === 'Faixa interditada' || r.originalType === 'Objeto na via' || r.originalType === 'Lentidão') { colorClass = 'text-amber-400'; borderClass = 'border-amber-900/50'; icon = 'construction'; }
+        
+        return `
+        <div class="bg-slate-950 p-3 rounded-xl border ${borderClass} flex flex-col">
+            <span class="text-xs font-bold ${colorClass} mb-1 flex items-center gap-1"><i data-lucide="${icon}" class="w-3 h-3"></i> ${r.type}</span>
+            <span class="text-[10px] text-slate-400">Local: ${r.location}</span>
+            <span class="text-[9px] text-slate-500 mt-1">${new Date(r.timestamp).toLocaleString('pt-BR')}</span>
         </div>
-      `).join('');
+        `;
+    }).join('');
+    if (window.lucide && window.lucide.createIcons) window.lucide.createIcons();
     }
 
     // Render Risk Score Baseado em feedbacks
@@ -6017,6 +6166,171 @@ Retorne APENAS o HTML da view, usando classes do Tailwind CSS. Não inclua \`\`\
        this.showToast(`ðŸ”‘ Bem-vindo(a) via Google, ${window.tempGoogleUser.name}!`);
     }
   },
+,
+
+  // --- GESTÃO DE MOTORISTAS ---
+  showDriverModal() {
+    const modal = document.getElementById('driver-modal');
+    if(modal) {
+        modal.classList.remove('opacity-0', 'pointer-events-none');
+        document.getElementById('driver-modal-content').classList.remove('scale-95');
+        this.setDriverType('vinculado'); // default
+    }
+  },
+  hideDriverModal() {
+    const modal = document.getElementById('driver-modal');
+    if(modal) {
+        modal.classList.add('opacity-0', 'pointer-events-none');
+        document.getElementById('driver-modal-content').classList.add('scale-95');
+        // Clear inputs
+        document.getElementById('driver-name').value = '';
+        document.getElementById('driver-cpf').value = '';
+        document.getElementById('driver-cnpj').value = '';
+    }
+  },
+  setDriverType(type) {
+    this.driverType = type;
+    const btnVinc = document.getElementById('btn-driver-type-vinculado');
+    const btnAuto = document.getElementById('btn-driver-type-autonomo');
+    const labelCnpj = document.getElementById('label-driver-cnpj');
+    
+    if(type === 'vinculado') {
+        btnVinc.className = 'bg-blue-600 text-white text-sm font-bold py-2 rounded-lg border border-blue-500 transition-all';
+        btnAuto.className = 'bg-slate-800 text-slate-400 text-sm font-bold py-2 rounded-lg border border-slate-700 transition-all hover:bg-slate-700 hover:text-slate-300';
+        labelCnpj.innerText = 'CNPJ da sua Empresa';
+    } else {
+        btnAuto.className = 'bg-blue-600 text-white text-sm font-bold py-2 rounded-lg border border-blue-500 transition-all';
+        btnVinc.className = 'bg-slate-800 text-slate-400 text-sm font-bold py-2 rounded-lg border border-slate-700 transition-all hover:bg-slate-700 hover:text-slate-300';
+        labelCnpj.innerText = 'CNPJ do Contratante';
+    }
+  },
+  saveDriver() {
+    const name = document.getElementById('driver-name').value.trim();
+    const cpf = document.getElementById('driver-cpf').value.trim();
+    const cnpj = document.getElementById('driver-cnpj').value.trim();
+    
+    if(!name || !cpf || !cnpj) {
+        this.showToast('Preencha todos os campos do motorista.', 'error');
+        return;
+    }
+    
+    let drivers = JSON.parse(localStorage.getItem('GENERAL_DRIVERS') || '[]');
+    drivers.push({
+        id: Date.now(),
+        type: this.driverType,
+        name,
+        cpf,
+        cnpj,
+        status: 'Ativo'
+    });
+    localStorage.setItem('GENERAL_DRIVERS', JSON.stringify(drivers));
+    
+    this.hideDriverModal();
+    this.showToast('Motorista cadastrado com sucesso!');
+    this.renderDriversList();
+  },
+  renderDriversList() {
+    const list = document.getElementById('drivers-list');
+    if(!list) return;
+    
+    const drivers = JSON.parse(localStorage.getItem('GENERAL_DRIVERS') || '[]');
+    if(drivers.length === 0) {
+        list.innerHTML = '<div class="col-span-2 p-4 border border-slate-800 border-dashed rounded-xl text-center text-slate-500 text-sm">Nenhum motorista cadastrado ainda.</div>';
+        return;
+    }
+    
+    list.innerHTML = drivers.map(d => `
+        <div class="bg-slate-900 border border-slate-800 p-3 rounded-xl flex flex-col justify-between hover:border-slate-700 transition-colors">
+            <div>
+                <div class="flex items-center justify-between mb-2">
+                    <span class="text-xs font-bold text-white">${d.name}</span>
+                    <span class="text-[9px] font-bold px-1.5 py-0.5 rounded uppercase ${d.type === 'vinculado' ? 'bg-blue-900/30 text-blue-400 border border-blue-800' : 'bg-amber-900/30 text-amber-400 border border-amber-800'}">${d.type}</span>
+                </div>
+                <div class="text-[10px] text-slate-400 space-y-0.5 font-mono">
+                    <p>CPF: ${d.cpf}</p>
+                    <p>CNPJ: ${d.cnpj}</p>
+                </div>
+            </div>
+            <div class="mt-3 pt-3 border-t border-slate-800 flex items-center justify-between">
+                <span class="text-[10px] text-emerald-400 flex items-center gap-1"><i data-lucide="check-circle" class="w-3 h-3"></i> ${d.status}</span>
+                <button onclick="App.showToast('Função de edição em breve.')" class="text-slate-500 hover:text-blue-400"><i data-lucide="edit" class="w-3 h-3"></i></button>
+            </div>
+        </div>
+    `).join('');
+    
+    if(window.lucide && window.lucide.createIcons) window.lucide.createIcons();
+  },
+  
+  // --- MONITORAMENTO AO VIVO ---
+  initLiveMonitoring() {
+    if(!this.monitoringChannel) {
+        this.monitoringChannel = new BroadcastChannel('general_monitoring_channel');
+        this.monitoringChannel.onmessage = (event) => {
+            this.handleLiveMonitoringData(event.data);
+        };
+    }
+  },
+  handleLiveMonitoringData(data) {
+    const idleContainer = document.getElementById('idle-monitoring-container');
+    const liveContainer = document.getElementById('live-monitoring-container');
+    const noSignal = document.getElementById('no-signal-overlay');
+    const alertCritical = document.getElementById('live-vital-alert');
+    const videoElem = document.getElementById('manager-live-video');
+    
+    if(!liveContainer) return;
+    
+    if(data.type === 'route_started') {
+        idleContainer.classList.add('hidden');
+        liveContainer.classList.remove('hidden');
+        document.getElementById('live-driver-name').innerText = data.driverName || 'Motorista Desconhecido';
+        document.getElementById('live-route-code').innerText = data.routeCode || 'Rota ' + Math.floor(Math.random()*1000);
+    }
+    else if(data.type === 'route_ended') {
+        idleContainer.classList.remove('hidden');
+        liveContainer.classList.add('hidden');
+        videoElem.srcObject = null;
+    }
+    else if(data.type === 'telemetry') {
+        // GPS
+        if(data.location) {
+            document.getElementById('live-location').innerText = `Lat: ${data.location.lat.toFixed(4)} Lng: ${data.location.lng.toFixed(4)}`;
+        }
+        
+        // Batimentos
+        if(data.heartRate) {
+            const hrElem = document.getElementById('live-heart-rate');
+            hrElem.innerHTML = `${data.heartRate} <span class="text-[10px] font-normal text-slate-500">BPM</span>`;
+            
+            if(data.heartRate < 50 || data.heartRate > 120) {
+                hrElem.classList.replace('text-white', 'text-rose-500');
+                alertCritical.classList.remove('hidden');
+            } else {
+                hrElem.classList.replace('text-rose-500', 'text-white');
+                alertCritical.classList.add('hidden');
+            }
+        }
+        
+        // Video Stream
+        // For a local demo, we pass the frame as dataURL or rely on WebRTC. 
+        // BroadcastChannel passing dataURL frames at low FPS is good enough for a demo.
+        if(data.videoFrame) {
+            noSignal.classList.add('hidden');
+            // Instead of srcObject, we can use a canvas or update poster
+            // To make it easy, we'll set it as a background image of the video parent, or just an img tag.
+            // Let's replace the video element with an image if it's not already.
+            let imgElem = document.getElementById('manager-live-img');
+            if(!imgElem) {
+                videoElem.style.display = 'none';
+                imgElem = document.createElement('img');
+                imgElem.id = 'manager-live-img';
+                imgElem.className = 'w-full h-full object-cover';
+                videoElem.parentElement.appendChild(imgElem);
+            }
+            imgElem.src = data.videoFrame;
+        }
+    }
+  }
+
 };
 
 window.addEventListener('DOMContentLoaded', () => {
