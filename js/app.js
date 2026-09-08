@@ -6166,7 +6166,6 @@ Retorne APENAS o HTML da view, usando classes do Tailwind CSS. Não inclua \`\`\
        this.showToast(`ðŸ”‘ Bem-vindo(a) via Google, ${window.tempGoogleUser.name}!`);
     }
   },
-,
 
   // --- GESTÃO DE MOTORISTAS ---
   showDriverModal() {
