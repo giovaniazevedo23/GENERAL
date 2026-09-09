@@ -384,6 +384,11 @@
 
 
 
+
+        <button id="btn-trocar-empresa-desktop" onclick="App.promptChangeCompany()" class="hidden w-full bg-blue-500/10 hover:bg-blue-500/20 border border-blue-500/30 text-blue-300 px-3 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center gap-3">
+          <i data-lucide="building-2" class="w-4 h-4 text-blue-400"></i>
+          Trocar Empresa
+        </button>
         <button onclick="App.logout()" class="flex-shrink-0 flex items-center gap-2 bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/30 text-rose-400 px-3 py-2 rounded-xl text-xs font-bold transition-all touch-active">
 
           <i data-lucide="log-out" class="w-4 h-4"></i>
@@ -5701,6 +5706,11 @@
 
           </button>
 
+
+          <button id="btn-trocar-empresa" onclick="App.promptChangeCompany(); App.toggleMobileDrawer();" class="hidden w-full bg-blue-500/10 hover:bg-blue-500/20 border border-blue-500/30 text-blue-300 font-bold py-2.5 rounded-xl text-xs transition-all flex items-center justify-center gap-2 mb-3">
+            <i data-lucide="building-2" class="w-4 h-4 text-blue-400"></i>
+            Trocar Empresa (CNPJ)
+          </button>
           <button onclick="App.logout(); App.toggleMobileDrawer();" class="w-full bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/30 text-rose-300 font-bold py-2.5 rounded-xl text-xs transition-all flex items-center justify-center gap-2">
 
             <i data-lucide="log-out" class="w-4 h-4 text-rose-400"></i>

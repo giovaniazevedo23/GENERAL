@@ -1152,6 +1152,32 @@ login() {
       }
   },
 
+
+  async promptChangeCompany() {
+      if(!appState.currentUser || appState.currentUser.driverType !== 'autonomo') return;
+      
+      const newCnpj = prompt('Digite o novo CNPJ da empresa que voc\u00ea vai atender:');
+      if(newCnpj) {
+          const cnpjClean = newCnpj.replace(/\D/g, '');
+          if(cnpjClean.length > 0) {
+              try {
+                  await window.db.collection('users').doc(appState.currentUser.id).update({
+                      companyCnpj: cnpjClean
+                  });
+                  appState.currentUser.companyCnpj = cnpjClean;
+                  localStorage.setItem('general_user', JSON.stringify(appState.currentUser));
+                  this.showToast('CNPJ atualizado com sucesso! Nova rota pronta.', 'success');
+                  // Update UI if necessary
+                  const companyInput = document.getElementById('motorista-company');
+                  if(companyInput) companyInput.value = cnpjClean;
+              } catch(e) {
+                  console.error(e);
+                  this.showToast('Erro ao atualizar empresa.', 'error');
+              }
+          }
+      }
+  },
+
   logout() {
     if (confirm('Deseja realmente sair da sua conta no GENERAL?')) {
       localStorage.removeItem('general_user');
@@ -6198,7 +6224,7 @@ Retorne APENAS o HTML da view, usando classes do Tailwind CSS. Não inclua \`\`\
     }
   },
   
-  loginDriver() {
+  async loginDriver() {
     const type = this.loginType || 'vinculado';
     const cpf = document.getElementById('login-cpf').value.trim();
     
@@ -6207,38 +6233,68 @@ Retorne APENAS o HTML da view, usando classes do Tailwind CSS. Não inclua \`\`\
         return;
     }
     
-    // Check if we are simulating database via localStorage
-    const drivers = JSON.parse(localStorage.getItem('GENERAL_DRIVERS') || '[]');
-    let driverData = null;
-    
-    if(type === 'vinculado') {
-        driverData = drivers.find(d => d.cpf === cpf && d.type === 'vinculado');
-        if(!driverData) {
-            // For demo purposes, we will allow login anyway if not strict, but let's be strict
-            // If empty, auto-register as mock
-            driverData = { id: Date.now(), name: 'Motorista Mock', cpf, cnpj: '00.000.000/0001-00', type: 'vinculado' };
-            this.showToast('CPF não encontrado, mas login liberado para demonstração.', 'warning');
-        }
-    } else {
-        const name = document.getElementById('login-name').value.trim();
-        const cnpj = document.getElementById('login-cnpj').value.trim();
-        if(!name || !cnpj) {
-            this.showToast('Preencha Nome e CNPJ.', 'error');
-            return;
-        }
-        driverData = { id: Date.now(), name, cpf, cnpj, type: 'autonomo' };
-        
-        // Auto register in Gestor Panel
-        drivers.push(driverData);
-        localStorage.setItem('GENERAL_DRIVERS', JSON.stringify(drivers));
+    const cpfClean = cpf.replace(/\D/g, '');
+    if(cpfClean.length !== 11) {
+        this.showToast('CPF invalido.', 'error');
+        return;
     }
     
-    appState.currentUser = driverData;
-    localStorage.setItem('general_user', JSON.stringify(driverData));
+    const btn = document.getElementById('btn-action-login-motorista');
+    const oldHtml = btn.innerHTML;
+    btn.innerHTML = '<div class="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div> Entrando...';
+    btn.disabled = true;
     
-    document.getElementById('login-overlay').classList.add('hidden');
-    this.showToast(`Bem-vindo, ${driverData.name}!`);
-    this.checkAuth(); // Updates UI
+    try {
+        let driverData = null;
+        if(type === 'vinculado') {
+            const doc = await window.db.collection('users').doc(cpfClean).get();
+            if(doc.exists) {
+                const data = doc.data();
+                if(data.driverType === 'vinculado' || data.type === 'vinculado' || data.role === 'motorista') {
+                    driverData = data;
+                } else {
+                    this.showToast('Este CPF não está registrado como motorista vinculado.', 'error');
+                    return;
+                }
+            } else {
+                this.showToast('CPF não encontrado. A transportadora já realizou seu cadastro?', 'error');
+                return;
+            }
+        } else {
+            const name = document.getElementById('login-name').value.trim();
+            const cnpj = document.getElementById('login-cnpj').value.trim();
+            if(!name || !cnpj) {
+                this.showToast('Preencha Nome e CNPJ da transportadora.', 'error');
+                return;
+            }
+            const cnpjClean = cnpj.replace(/\D/g, '');
+            
+            driverData = { 
+                id: cpfClean, 
+                name: name, 
+                cpf: cpf, 
+                companyCnpj: cnpjClean, 
+                role: 'motorista',
+                driverType: 'autonomo',
+                lastLogin: firebase.firestore.FieldValue.serverTimestamp()
+            };
+            
+            await window.db.collection('users').doc(cpfClean).set(driverData, { merge: true });
+        }
+        
+        appState.currentUser = driverData;
+        localStorage.setItem('general_user', JSON.stringify(driverData));
+        
+        document.getElementById('login-overlay').classList.add('hidden');
+        this.showToast(`Bem-vindo, ${driverData.name}!`);
+        this.checkAuth(); 
+    } catch(e) {
+        console.error(e);
+        this.showToast('Erro ao realizar login.', 'error');
+    } finally {
+        btn.innerHTML = oldHtml;
+        btn.disabled = false;
+    }
   },
 
   // --- CÂMERA E SINAIS VITAIS ---

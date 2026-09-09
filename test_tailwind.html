@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            slate: {
+              900: 'var(--tw-slate-900, #0f172a)'
+            }
+          }
+        }
+      }
+    }
+  </script>
+  <style id="dynamic-theme">
+    :root {
+      --tw-slate-900: #1F2605;
+    }
+  </style>
+</head>
+<body class="bg-slate-900">
+  <div class="w-32 h-32 bg-slate-900">Hello World</div>
+</body>
+</html>
