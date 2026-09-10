@@ -6210,24 +6210,19 @@ Retorne APENAS o HTML da view, usando classes do Tailwind CSS. Não inclua \`\`\
     const btnAuto = document.getElementById('btn-login-autonomo');
     const fieldName = document.getElementById('field-driver-name');
     const fieldCnpj = document.getElementById('field-driver-cnpj');
-    const fieldCompany = document.getElementById('field-driver-company');
-    const fieldCargo = document.getElementById('field-driver-cargo');
     
     if(type === 'vinculado') {
-        if(btnVinc) btnVinc.className = 'bg-blue-600 text-white text-sm font-bold py-2 rounded-lg border border-blue-500 transition-all';
-        if(btnAuto) btnAuto.className = 'bg-slate-800 text-slate-400 text-sm font-bold py-2 rounded-lg border border-slate-700 transition-all hover:bg-slate-700 hover:text-slate-300';
-        if(fieldName) fieldName.classList.add('hidden');
-        if(fieldCnpj) fieldCnpj.classList.add('hidden');
-        if(fieldCompany) fieldCompany.classList.add('hidden');
-        if(fieldCargo) fieldCargo.classList.add('hidden');
+        btnVinc.className = 'bg-blue-600 text-white text-sm font-bold py-2 rounded-lg border border-blue-500 transition-all';
+        btnAuto.className = 'bg-slate-800 text-slate-400 text-sm font-bold py-2 rounded-lg border border-slate-700 transition-all hover:bg-slate-700 hover:text-slate-300';
+        fieldName.classList.add('hidden');
+        fieldCnpj.classList.add('hidden');
     } else {
-        if(btnAuto) btnAuto.className = 'bg-blue-600 text-white text-sm font-bold py-2 rounded-lg border border-blue-500 transition-all';
-        if(btnVinc) btnVinc.className = 'bg-slate-800 text-slate-400 text-sm font-bold py-2 rounded-lg border border-slate-700 transition-all hover:bg-slate-700 hover:text-slate-300';
-        if(fieldName) fieldName.classList.remove('hidden');
-        if(fieldCnpj) fieldCnpj.classList.remove('hidden');
-        if(fieldCompany) fieldCompany.classList.remove('hidden');
-        if(fieldCargo) fieldCargo.classList.remove('hidden');
-    }  },
+        btnAuto.className = 'bg-blue-600 text-white text-sm font-bold py-2 rounded-lg border border-blue-500 transition-all';
+        btnVinc.className = 'bg-slate-800 text-slate-400 text-sm font-bold py-2 rounded-lg border border-slate-700 transition-all hover:bg-slate-700 hover:text-slate-300';
+        fieldName.classList.remove('hidden');
+        fieldCnpj.classList.remove('hidden');
+    }
+  },
   
   async loginDriver() {
     const type = this.loginType || 'vinculado';
@@ -6266,18 +6261,10 @@ Retorne APENAS o HTML da view, usando classes do Tailwind CSS. Não inclua \`\`\
                 return;
             }
         } else {
-            const nameEl = document.getElementById('login-name');
-            const cnpjEl = document.getElementById('login-cnpj');
-            const compEl = document.getElementById('login-company');
-            const cargoEl = document.getElementById('login-cargo');
-            
-            const name = nameEl ? nameEl.value.trim() : '';
-            const cnpj = cnpjEl ? cnpjEl.value.trim() : '';
-            const company = compEl ? compEl.value.trim() : '';
-            const cargo = cargoEl ? cargoEl.value.trim() : 'Motorista';
-            
-            if(!name || !cnpj || !company) {
-                this.showToast('Preencha Nome, Empresa e CNPJ.', 'error');
+            const name = document.getElementById('login-name').value.trim();
+            const cnpj = document.getElementById('login-cnpj').value.trim();
+            if(!name || !cnpj) {
+                this.showToast('Preencha Nome e CNPJ da transportadora.', 'error');
                 return;
             }
             const cnpjClean = cnpj.replace(/\D/g, '');
@@ -6286,9 +6273,8 @@ Retorne APENAS o HTML da view, usando classes do Tailwind CSS. Não inclua \`\`\
                 id: cpfClean, 
                 name: name, 
                 cpf: cpf, 
-                company: company,
                 companyCnpj: cnpjClean, 
-                role: cargo,
+                role: 'motorista',
                 driverType: 'autonomo',
                 lastLogin: firebase.firestore.FieldValue.serverTimestamp()
             };
